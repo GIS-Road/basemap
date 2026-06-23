@@ -1,0 +1,80 @@
+/* ========== 全局样式 & 科技蓝主题 ========== */
+:root {
+  --tech-blue-900: #001f3f;
+  --tech-blue-800: #0a3d6b;
+  --tech-blue-700: #0d5197;
+  --tech-blue-600: #1677FF;
+  --tech-blue-500: #4096FF;
+  --tech-blue-400: #69b1ff;
+  --tech-blue-300: #91caff;
+  --tech-blue-200: #bae0ff;
+  --tech-blue-100: #e6f4ff;
+  --tech-blue-50: #f0f7ff;
+
+  --header-height: 54px;
+  --sidebar-width: 280px;
+  --toggle-size: 52px;
+  --bg-dark: #0a1628;
+  --bg-panel: #0d1f3c;
+  --text-primary: #e6f0ff;
+  --text-secondary: #8ba6cc;
+  --border-color: rgba(64, 150, 255, 0.15);
+
+  --el-color-primary: var(--tech-blue-600);
+  --el-color-primary-light-3: var(--tech-blue-400);
+  --el-color-primary-light-5: var(--tech-blue-300);
+  --el-color-primary-light-7: var(--tech-blue-200);
+  --el-color-primary-light-9: var(--tech-blue-100);
+  --el-color-primary-dark-2: var(--tech-blue-700);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-primary);
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+}
+
+/* 滚动条 */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(64, 150, 255, 0.3);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(64, 150, 255, 0.5);
+}
+
+/* Element Plus 覆盖 */
+.el-tree {
+  background: transparent !important;
+  --el-tree-text-color: var(--text-secondary);
+}
+.el-tree-node__content {
+  height: 36px !important;
+}
+.el-tree-node__content:hover {
+  background: rgba(64, 150, 255, 0.08) !important;
+}
+.el-tree-node.is-current > .el-tree-node__content {
+  background: rgba(64, 150, 255, 0.12) !important;
+}

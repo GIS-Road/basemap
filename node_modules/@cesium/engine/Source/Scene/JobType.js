@@ -1,0 +1,15 @@
+// @ts-check
+
+/**
+ * @private
+ */
+const JobType = {
+  TEXTURE: 0,
+  PROGRAM: 1,
+  BUFFER: 2,
+  NUMBER_OF_JOB_TYPES: 3,
+};
+
+Object.freeze(JobType);
+
+export default JobType;
