@@ -52,6 +52,9 @@ export const useMapStore = defineStore('map', () => {
   // 定位状态
   const locateStatus = ref('idle') // 'idle' | 'locating' | 'success' | 'error'
 
+  // 绘制工具栏是否处于激活状态（阻止地图点击拾取坐标）
+  const isDrawingActive = ref(false)
+
   // Cesium 相机状态
   const cesiumCamera = ref(null)
 
@@ -79,6 +82,10 @@ export const useMapStore = defineStore('map', () => {
 
   function setCesiumCamera(camera) {
     cesiumCamera.value = camera
+  }
+
+  function setDrawingActive(active) {
+    isDrawingActive.value = active
   }
 
   /**
@@ -172,6 +179,24 @@ export const useMapStore = defineStore('map', () => {
     return traverse(layerTree.value)
   }
 
+  /**
+   * 获取所有叶子图层按树顺序的扁平列表（用于 z-index 分配）
+   * 越靠前（索引越小）的图层 zIndex 越小，离用户越远
+   */
+  function getFlatOrderedLayers() {
+    const result = []
+    const traverse = (nodes) => {
+      for (const node of nodes) {
+        if (node.type !== 'group') {
+          result.push(node)
+        }
+        if (node.children) traverse(node.children)
+      }
+    }
+    traverse(layerTree.value)
+    return result
+  }
+
   return {
     mapMode,
     layerTree,
@@ -182,15 +207,18 @@ export const useMapStore = defineStore('map', () => {
     hasLocated,
     locateStatus,
     cesiumCamera,
+    isDrawingActive,
     toggleMapMode,
     setMapMode,
     setActiveBaseMap,
     setMapCenter,
     setMapZoom,
     setCesiumCamera,
+    setDrawingActive,
     toggleLayerVisibility,
     setLayerVisibility,
     getLayerVisibility,
+    getFlatOrderedLayers,
     getCurrentLocation
   }
 })

@@ -45,16 +45,27 @@
         <span class="mode-badge" :class="mapStore.mapMode">
           {{ mapStore.mapMode === '2d' ? '二维模式' : '三维模式' }}
         </span>
-        <div class="coord-display">
-          <svg viewBox="0 0 14 14" width="14" height="14" style="margin-right: 4px;">
-            <circle cx="7" cy="7" r="1.5" fill="#4096FF" />
-            <circle cx="7" cy="7" r="5" fill="none" stroke="#4096FF" stroke-width="0.8" opacity="0.5" />
-            <line x1="7" y1="1" x2="7" y2="3.5" stroke="#4096FF" stroke-width="0.6" opacity="0.5" />
-            <line x1="7" y1="10.5" x2="7" y2="13" stroke="#4096FF" stroke-width="0.6" opacity="0.5" />
-            <line x1="1" y1="7" x2="3.5" y2="7" stroke="#4096FF" stroke-width="0.6" opacity="0.5" />
-            <line x1="10.5" y1="7" x2="13" y2="7" stroke="#4096FF" stroke-width="0.6" opacity="0.5" />
+        <!-- 地图坐标：鼠标移动实时显示 / 点击锁定 + 复制 -->
+        <div class="pick-coord" :class="{ active: pickedCoord || mouseCoord }">
+          <svg viewBox="0 0 14 14" width="13" height="13" style="margin-right: 3px;">
+            <path d="M3 2l3 10 2-4 3-2z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" />
+            <circle cx="8.5" cy="5.5" r="0.8" fill="currentColor" />
           </svg>
-          <span>{{ coordText }}</span>
+          <span class="pick-coord-text">{{ coordDisplayText }}</span>
+          <button
+            v-show="pickedCoord"
+            class="copy-btn"
+            @click="copyCoord"
+            :title="copyBtnText"
+          >
+            <svg v-if="copyBtnText === '已复制'" viewBox="0 0 14 14" width="12" height="12">
+              <polyline points="2,7 5.5,10.5 12,3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <svg v-else viewBox="0 0 14 14" width="12" height="12">
+              <rect x="4" y="4" width="8" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="1.2" />
+              <path d="M2 10V2h8" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+            </svg>
+          </button>
         </div>
       </div>
     </header>
@@ -144,6 +155,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { toLonLat } from 'ol/proj'
 import { useMapStore } from './stores/mapStore'
 import { useMap2D } from './composables/useMap2D'
 import { useMap3D } from './composables/useMap3D'
@@ -152,15 +164,51 @@ import MapToggle from './components/MapToggle.vue'
 import DrawingToolbar from './components/DrawingToolbar.vue'
 
 const mapStore = useMapStore()
-const { initMap, switchBaseMap: switch2DBase, setLayerVisible, addLayerToTop, removeDynamicLayer, createOverlayAndAddToTop, getCenter, getZoom, setView, flyToLocation, destroyMap } = useMap2D()
+const { initMap, switchBaseMap: switch2DBase, setLayerVisible, addLayerToTop, removeDynamicLayer, createOverlayAndAddToTop, syncLayerOrder, getCenter, getZoom, setView, flyToLocation, destroyMap } = useMap2D()
 const { initViewer, getCenter: get3DCenter, getApproximateZoom, flyTo, destroyViewer } = useMap3D()
 
 const map2dRef = ref(null)
 const map3dRef = ref(null)
 const isLoading = ref(false)
-const coordText = ref('104.00°E, 35.00°N')
 const locateMsg = ref('')
 const baseMapExpanded = ref(false)
+
+// ==================== 鼠标 / 点击拾取坐标 ====================
+
+const mouseCoord = ref(null)   // [lng, lat] | null — pointermove 实时更新
+const pickedCoord = ref(null)  // [lng, lat] | null — click 锁定
+const copyBtnText = ref('复制')
+
+function formatCoordText(coord) {
+  const lng = coord[0]
+  const lat = coord[1]
+  const absLng = Math.abs(lng).toFixed(6)
+  const absLat = Math.abs(lat).toFixed(6)
+  return `${absLng}°${lng >= 0 ? 'E' : 'W'}, ${absLat}°${lat >= 0 ? 'N' : 'S'}`
+}
+
+const coordDisplayText = computed(() => {
+  if (pickedCoord.value) return formatCoordText(pickedCoord.value)
+  if (mouseCoord.value) return formatCoordText(mouseCoord.value)
+  return '移动鼠标查看坐标'
+})
+
+const copyRawText = computed(() => {
+  if (!pickedCoord.value) return ''
+  return `${pickedCoord.value[0].toFixed(6)}, ${pickedCoord.value[1].toFixed(6)}`
+})
+
+async function copyCoord() {
+  if (!pickedCoord.value) return
+  try {
+    await navigator.clipboard.writeText(copyRawText.value)
+    copyBtnText.value = '已复制'
+    setTimeout(() => { copyBtnText.value = '复制' }, 1500)
+  } catch {
+    copyBtnText.value = '失败'
+    setTimeout(() => { copyBtnText.value = '复制' }, 1500)
+  }
+}
 
 let map2d = null
 let viewer3d = null
@@ -197,13 +245,26 @@ async function init2DMap() {
     baseMap: mapStore.activeBaseMap
   })
 
-  // 监听视角变化
+  // 监听视角变化（仅存 store 中心/缩放，不再显示中心坐标）
   map2d.on('moveend', () => {
     const center = getCenter(map2d)
     const zoom = getZoom(map2d)
     mapStore.setMapCenter([center[0], center[1]])
     mapStore.setMapZoom(zoom)
-    updateCoordDisplay(center)
+  })
+
+  // 鼠标移动实时显示经纬度
+  map2d.on('pointermove', (evt) => {
+    if (mapStore.isDrawingActive) return
+    const coord = toLonLat(evt.coordinate)
+    mouseCoord.value = [coord[0], coord[1]]
+  })
+
+  // 地图点击锁定拾取坐标
+  map2d.on('click', (evt) => {
+    if (mapStore.isDrawingActive) return
+    const coord = toLonLat(evt.coordinate)
+    pickedCoord.value = [coord[0], coord[1]]
   })
 }
 
@@ -223,18 +284,7 @@ async function init3DMap() {
     const zoom = getApproximateZoom(viewer3d)
     mapStore.setMapCenter([center[0], center[1]])
     mapStore.setMapZoom(zoom)
-    updateCoordDisplay(center)
   })
-}
-
-// ==================== 辅助函数 ====================
-
-function updateCoordDisplay(center) {
-  const lng = center[0].toFixed(4)
-  const lat = center[1].toFixed(4)
-  const lngDir = lng >= 0 ? 'E' : 'W'
-  const latDir = lat >= 0 ? 'N' : 'S'
-  coordText.value = `${Math.abs(lng)}°${lngDir}, ${Math.abs(lat)}°${latDir}`
 }
 
 // ==================== 底图切换 ====================
@@ -308,7 +358,7 @@ function handleModeChange(mode) {
 
 // ==================== 图层可见性与地图联动 ====================
 
-// 监听图层树变化，同步到地图图层显隐
+// 监听图层树变化，同步到地图图层显隐 + 层级顺序
 watch(() => mapStore.layerTree, () => {
   if (!map2d) return
   const traverse = (nodes) => {
@@ -318,7 +368,7 @@ watch(() => mapStore.layerTree, () => {
         if (node.type === 'base' || node.id.startsWith('tianditu') || node.id === 'osm' || node.id === 'arcgis') {
           setLayerVisible(map2d, node.id, node.visible)
         } else {
-          // 非底图图层（overlay / terrain 等）：动态添加/移除，始终在最上层
+          // 非底图图层（overlay / terrain 等）：动态添加/移除
           if (node.visible) {
             createOverlayAndAddToTop(map2d, node.id, node.url)
           } else {
@@ -330,6 +380,9 @@ watch(() => mapStore.layerTree, () => {
     }
   }
   traverse(mapStore.layerTree)
+
+  // 同步图层 z-index 顺序：越靠上 zIndex 越小（离用户越远），越靠下 zIndex 越大（离用户越近）
+  syncLayerOrder(map2d, mapStore.layerTree)
 }, { deep: true })
 
 // ==================== 生命周期 ====================
@@ -456,13 +509,42 @@ onUnmounted(() => {
   border: 1px solid rgba(105, 177, 255, 0.2);
 }
 
-.coord-display {
+.pick-coord {
   display: flex;
   align-items: center;
   font-size: 12px;
-  color: var(--text-secondary);
+  color: rgba(139, 166, 204, 0.55);
   font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
   letter-spacing: 0.5px;
+  transition: color 0.2s;
+}
+
+.pick-coord.active {
+  color: #69b1ff;
+}
+
+.pick-coord.active .pick-coord-text {
+  color: #91caff;
+}
+
+.copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-left: 4px;
+  border: none;
+  border-radius: 4px;
+  background: rgba(64, 150, 255, 0.08);
+  color: rgba(139, 166, 204, 0.6);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover {
+  background: rgba(64, 150, 255, 0.18);
+  color: #91caff;
 }
 
 /* ===== 主体区域 ===== */

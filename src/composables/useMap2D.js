@@ -41,28 +41,32 @@ const VITE_TDT_TOKEN = 'fa7ec9766b2c00747e3dd60ab3d05892'
 const BASE_MAP_SOURCES = {
   osm: () => new TileLayer({
     source: new OSM(),
-    visible: false
+    visible: false,
+    properties: { layerId: 'osm' }
   }),
   tianditu_vec: () => new TileLayer({
     source: new XYZ({
       url: `https://t{0-7}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}&tk=${VITE_TDT_TOKEN}`,
       crossOrigin: 'anonymous'
     }),
-    visible: false
+    visible: false,
+    properties: { layerId: 'tianditu_vec' }
   }),
   tianditu_img: () => new TileLayer({
     source: new XYZ({
       url: `https://t{0-7}.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=${VITE_TDT_TOKEN}`,
       crossOrigin: 'anonymous'
     }),
-    visible: true // 默认天地图影像
+    visible: true, // 默认天地图影像
+    properties: { layerId: 'tianditu_img' }
   }),
   arcgis: () => new TileLayer({
     source: new XYZ({
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       crossOrigin: 'anonymous'
     }),
-    visible: false
+    visible: false,
+    properties: { layerId: 'arcgis' }
   })
 }
 
@@ -104,42 +108,52 @@ export function useMap2D() {
   function switchBaseMap(map, mapId) {
     const layers = map.getLayers().getArray()
     layers.forEach(layer => {
-      const source = layer.getSource()
-      if (source) {
-        let layerId = 'unknown'
-        if (source instanceof OSM) layerId = 'osm'
-        else if (source instanceof XYZ) {
-          const url = source.getUrls()?.[0] || ''
-          if (url.includes('tianditu') && url.includes('vec_w')) layerId = 'tianditu_vec'
-          else if (url.includes('tianditu') && url.includes('img_w')) layerId = 'tianditu_img'
-          else if (url.includes('arcgisonline')) layerId = 'arcgis'
-        }
-        layer.setVisible(layerId === mapId)
+      const id = layer.get('layerId')
+      if (id) {
+        layer.setVisible(id === mapId)
       }
     })
   }
 
   /**
-   * 按图层ID控制可见性（用于图层面板复选框联动）
+   * 按图层ID控制可见性（用于图层面板联动）
    */
   function setLayerVisible(map, layerId, visible) {
-    const layers = map.getLayers().getArray()
-    layers.forEach(layer => {
-      const source = layer.getSource()
-      if (source) {
-        let currentId = 'unknown'
-        if (source instanceof OSM) currentId = 'osm'
-        else if (source instanceof XYZ) {
-          const url = source.getUrls()?.[0] || ''
-          if (url.includes('tianditu') && url.includes('vec_w')) currentId = 'tianditu_vec'
-          else if (url.includes('tianditu') && url.includes('img_w')) currentId = 'tianditu_img'
-          else if (url.includes('arcgisonline')) currentId = 'arcgis'
+    const layer = findLayerById(map.getLayers().getArray(), layerId)
+    if (layer) {
+      layer.setVisible(visible)
+    }
+  }
+
+  /**
+   * 按 layerId 查找地图图层
+   */
+  function findLayerById(layers, id) {
+    return layers.find(l => l.get('layerId') === id)
+  }
+
+  /**
+   * 同步图层顺序到地图：根据图层树中从上到下的顺序设置 zIndex
+   * 越靠上的图层 zIndex 越小（离用户越远），越靠下的图层 zIndex 越大（离用户越近）
+   * @param {ol/Map} map
+   * @param {Array} treeData - 图层树数据
+   */
+  function syncLayerOrder(map, treeData) {
+    let zIndex = 0
+    const allLayers = map.getLayers().getArray()
+    const traverse = (nodes) => {
+      for (const node of nodes) {
+        if (node.type !== 'group') {
+          const layer = findLayerById(allLayers, node.id)
+          if (layer) {
+            layer.setZIndex(zIndex)
+            zIndex++
+          }
         }
-        if (currentId === layerId) {
-          layer.setVisible(visible)
-        }
+        if (node.children) traverse(node.children)
       }
-    })
+    }
+    traverse(treeData)
   }
 
   // 动态图层注册表（用于 overlay / terrain 等非底图图层）
@@ -258,6 +272,7 @@ export function useMap2D() {
     addLayerToTop,
     removeDynamicLayer,
     createOverlayAndAddToTop,
+    syncLayerOrder,
     getCenter,
     getZoom,
     setView,

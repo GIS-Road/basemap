@@ -1,5 +1,11 @@
 {
   "groups": [
+    { "id": "anotation", "label": "注记图层", "expanded": false },
+    { "id": "image", "label": "影像图层", "expanded": false },
+    { "id": "vector", "label": "矢量图层", "expanded": false },
+    { "id": "river", "label": "河流图层", "expanded": false },
+    { "id": "road", "label": "路网图层", "expanded": false },
+    { "id": "light", "label": "灯光图层", "expanded": false },
     { "id": "base", "label": "底图图层", "expanded": true },
     { "id": "overlay", "label": "覆盖图层", "expanded": true },
     { "id": "terrain", "label": "地形图层", "expanded": false }
