@@ -61,7 +61,7 @@ basemap/
 - 个性化绘制和编辑
 
 ## 如何运行
-node版本要求22+
+`node` 版本要求22+
 
 项目运行
 ```
@@ -78,7 +78,7 @@ npm run build
 ## 联系作者
 微信公众号：GIS之路
 
-个人微信：shanhaigis
+个人微信：`shanhaigis`
 
 
 
