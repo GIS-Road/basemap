@@ -164,7 +164,7 @@ import MapToggle from './components/MapToggle.vue'
 import DrawingToolbar from './components/DrawingToolbar.vue'
 
 const mapStore = useMapStore()
-const { initMap, switchBaseMap: switch2DBase, setLayerVisible, setLayerOpacity, addLayerToTop, removeDynamicLayer, createOverlayAndAddToTop, syncLayerOrder, getCenter, getZoom, setView, flyToLocation, destroyMap } = useMap2D()
+const { initMap, switchBaseMap: switch2DBase, setLayerVisible, setLayerOpacity, addLayerToTop, removeDynamicLayer, createOverlayAndAddToTop, createWmtsOverlayAndAddToTop, syncLayerOrder, getCenter, getZoom, setView, flyToLocation, destroyMap } = useMap2D()
 const { initViewer, getCenter: get3DCenter, getApproximateZoom, flyTo, destroyViewer } = useMap3D()
 
 const map2dRef = ref(null)
@@ -370,7 +370,11 @@ watch(() => mapStore.layerTree, () => {
         } else {
           // 非底图图层（overlay / terrain 等）：动态添加/移除
           if (node.visible) {
-            createOverlayAndAddToTop(map2d, node.id, node.url)
+            if (node.type === 'wmts') {
+              createWmtsOverlayAndAddToTop(map2d, node.id, node.url)
+            } else {
+              createOverlayAndAddToTop(map2d, node.id, node.url)
+            }
           } else {
             removeDynamicLayer(map2d, node.id)
           }

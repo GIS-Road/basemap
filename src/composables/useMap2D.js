@@ -1,9 +1,11 @@
 import { ref } from 'vue'
-import Map from 'ol/Map'
+import OlMap from 'ol/Map'
 import View from 'ol/View'
 import TileLayer from 'ol/layer/Tile'
 import OSM from 'ol/source/OSM'
 import XYZ from 'ol/source/XYZ'
+import WMTS, { optionsFromCapabilities } from 'ol/source/WMTS'
+import WMTSCapabilities from 'ol/format/WMTSCapabilities'
 import Projection from 'ol/proj/Projection'
 import { addProjection, addCoordinateTransforms, getTransform, fromLonLat, toLonLat } from 'ol/proj'
 import Zoom from 'ol/control/Zoom'
@@ -84,7 +86,7 @@ export function useMap2D() {
 
     // 视图使用 EPSG:3857 —— 天地图 img_w/vec_w 瓦片均为 Web Mercator 网格
     // 坐标显示通过 toLonLat() 转为经纬度，EPSG:4490≈EPSG:4326 在民用精度下等价
-    const map = new Map({
+    const map = new OlMap({
       target,
       layers,
       view: new View({
@@ -215,6 +217,76 @@ export function useMap2D() {
     addLayerToTop(map, layerId, layer)
   }
 
+  /**
+   * 为 WMTS 图层解析 Capabilities XML 并添加到地图最上层
+   * @param {ol/Map} map
+   * @param {string} layerId
+   * @param {string} capabilitiesUrl - WMTS GetCapabilities XML 地址
+   * @param {Object} [options] - 覆盖选项
+   * @param {string} [options.layerName] - 图层名（不传则用 capabilities 中第一个图层）
+   * @param {string} [options.matrixSet] - 矩阵集名（不传则自动选择 EPSG:3857 兼容项）
+   */
+  async function createWmtsOverlayAndAddToTop(map, layerId, capabilitiesUrl, options = {}) {
+    if (!capabilitiesUrl) return
+
+    try {
+      const response = await fetch(capabilitiesUrl)
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      const xmlText = await response.text()
+
+      const parser = new WMTSCapabilities()
+      const caps = parser.read(xmlText)
+
+      // 优先使用用户指定的 layerName，否则取 Capabilities 中第一个图层
+      const layerName = options.layerName || (caps.Contents?.Layer?.[0]?.Identifier)
+      if (!layerName) {
+        console.warn(`[WMTS] 未找到有效图层: ${capabilitiesUrl}`)
+        return
+      }
+
+      // 自动选择 matrixSet：优先 EPSG:3857 / GoogleMapsCompatible / WGS84
+      const matrixSets = caps.Contents?.TileMatrixSet || []
+      const preferredMatrixSet = options.matrixSet
+        || matrixSets.find(ms => ms.Identifier === 'EPSG:3857')?.Identifier
+        || matrixSets.find(ms => ms.Identifier === 'GoogleMapsCompatible')?.Identifier
+        || matrixSets.find(ms => ms.Identifier?.includes('3857'))?.Identifier
+        || matrixSets[0]?.Identifier
+
+      if (!preferredMatrixSet) {
+        console.warn(`[WMTS] 未找到可用 matrixSet: ${capabilitiesUrl}`)
+        return
+      }
+
+      // 使用 optionsFromCapabilities 提取完整配置（tileGrid / url / projection 等）
+      const wmtsOptions = optionsFromCapabilities(caps, {
+        layer: layerName,
+        matrixSet: preferredMatrixSet
+      })
+
+      if (!wmtsOptions) {
+        console.warn(`[WMTS] optionsFromCapabilities 返回空: ${capabilitiesUrl}`)
+        return
+      }
+
+      const source = new WMTS({
+        ...wmtsOptions,
+        crossOrigin: 'anonymous',
+        requestEncoding: 'KVP'
+      })
+
+      const layer = new TileLayer({
+        source,
+        visible: true,
+        properties: { layerId }
+      })
+
+      addLayerToTop(map, layerId, layer)
+      console.log(`[WMTS] 图层加载成功: ${layerId} (layer=${layerName}, matrixSet=${preferredMatrixSet})`)
+    } catch (err) {
+      console.error(`[WMTS] 图层加载失败 ${layerId}:`, err)
+    }
+  }
+
   function getCenter(map) {
     return toLonLat(map.getView().getCenter())
   }
@@ -283,6 +355,7 @@ export function useMap2D() {
     addLayerToTop,
     removeDynamicLayer,
     createOverlayAndAddToTop,
+    createWmtsOverlayAndAddToTop,
     syncLayerOrder,
     getCenter,
     getZoom,

@@ -1,16 +1,79 @@
 {
   "groups": [
-    { "id": "anotation", "label": "注记图层", "expanded": false },
-    { "id": "image", "label": "影像图层", "expanded": false },
-    { "id": "vector", "label": "矢量图层", "expanded": false },
-    { "id": "river", "label": "河流图层", "expanded": false },
-    { "id": "road", "label": "路网图层", "expanded": false },
-    { "id": "light", "label": "灯光图层", "expanded": false },
-    { "id": "base", "label": "底图图层", "expanded": true },
-    { "id": "overlay", "label": "覆盖图层", "expanded": true },
-    { "id": "terrain", "label": "地形图层", "expanded": false }
+    {
+      "id": "image",
+      "label": "影像图层",
+      "expanded": true
+    },
+    {
+      "id": "vector",
+      "label": "矢量图层",
+      "expanded": false
+    },
+    {
+      "id": "river",
+      "label": "河流图层",
+      "expanded": false
+    },
+    {
+      "id": "road",
+      "label": "路网图层",
+      "expanded": false
+    },
+    {
+      "id": "light",
+      "label": "灯光图层",
+      "expanded": false
+    },
+    {
+      "id": "base",
+      "label": "底图图层",
+      "expanded": true
+    },
+    {
+      "id": "overlay",
+      "label": "覆盖图层",
+      "expanded": true
+    },
+    {
+      "id": "terrain",
+      "label": "地形图层",
+      "expanded": false
+    },
+    {
+      "id": "anotation",
+      "label": "注记图层",
+      "expanded": true
+    }
   ],
   "layers": [
+    {
+      "id": "Sentinel-2",
+      "label": "Sentinel-2 哨兵2全球无云影像产品 WMTS",
+      "name": "Sentinel-2",
+      "url": "https://tiles.maps.eox.at/wmts/1.0.0/WMTSCapabilities.xml",
+      "group": "image",
+      "type": "wmts",
+      "visible": false
+    },
+    {
+      "id": "geovisearth",
+      "label": "星图地球-全图层",
+      "name": "星图地球",
+      "url": "https://tiles.geovisearth.com/base/v1/img/{z}/{x}/{y}?format=webp&tmsIds=w&token=15d2ddab335383b5d485b78a3e04ac9f92683ee2e3b04cdf862cb292168674e7",
+      "group": "image",
+      "type": "image",
+      "visible": false
+    },
+    {
+      "id": "tdt_vector_label",
+      "label": "天地图矢量注记",
+      "name": "tdt_vector_label",
+      "url": "https://t{0-7}.tianditu.gov.cn/DataServer?T=cva_w&x={x}&y={y}&l={z}&tk=fa7ec9766b2c00747e3dd60ab3d05892",
+      "group": "anotation",
+      "type": "anotation",
+      "visible": false
+    },
     {
       "id": "osm",
       "label": "OpenStreetMap",
