@@ -26,6 +26,17 @@
             />
             <span class="color-value">{{ strokeColor }}</span>
           </div>
+          <div class="preset-colors">
+            <button
+              v-for="c in presetColors"
+              :key="'s-' + c"
+              class="preset-color-swatch"
+              :class="{ active: strokeColor.toUpperCase() === c.toUpperCase() }"
+              :style="{ background: c }"
+              @click="selectPresetColor(c, 'stroke')"
+              :title="c"
+            ></button>
+          </div>
         </div>
 
         <!-- 边线宽度 -->
@@ -132,6 +143,17 @@
             />
             <span class="color-value">{{ fillColor }}</span>
           </div>
+          <div class="preset-colors">
+            <button
+              v-for="c in presetColors"
+              :key="'f-' + c"
+              class="preset-color-swatch"
+              :class="{ active: fillColor.toUpperCase() === c.toUpperCase() }"
+              :style="{ background: c }"
+              @click="selectPresetColor(c, 'fill')"
+              :title="c"
+            ></button>
+          </div>
         </div>
 
         <!-- 填充透明度 -->
@@ -203,6 +225,17 @@
               <input type="color" class="color-input" v-model="gradientStartColor" @input="onStyleChange" />
               <span class="color-value">{{ gradientStartColor }}</span>
             </div>
+            <div class="preset-colors">
+              <button
+                v-for="c in presetColors"
+                :key="'gs-' + c"
+                class="preset-color-swatch"
+                :class="{ active: gradientStartColor.toUpperCase() === c.toUpperCase() }"
+                :style="{ background: c }"
+                @click="selectPresetColor(c, 'gradientStart')"
+                :title="c"
+              ></button>
+            </div>
           </div>
           <div class="style-row">
             <label class="style-label">起始透明度</label>
@@ -216,6 +249,17 @@
             <div class="style-control">
               <input type="color" class="color-input" v-model="gradientEndColor" @input="onStyleChange" />
               <span class="color-value">{{ gradientEndColor }}</span>
+            </div>
+            <div class="preset-colors">
+              <button
+                v-for="c in presetColors"
+                :key="'ge-' + c"
+                class="preset-color-swatch"
+                :class="{ active: gradientEndColor.toUpperCase() === c.toUpperCase() }"
+                :style="{ background: c }"
+                @click="selectPresetColor(c, 'gradientEnd')"
+                :title="c"
+              ></button>
             </div>
           </div>
           <div class="style-row">
@@ -379,6 +423,28 @@ const gradientStartColor = ref('#FF4444')
 const gradientEndColor = ref('#FFAA00')
 const gradientStartOpacity = ref(0.7)
 const gradientEndOpacity = ref(0.15)
+
+// 预设颜色（含红色和黄色）
+const presetColors = [
+  '#4096FF',  // 科技蓝
+  '#F5222D',  // 红色
+  '#FAAD14',  // 黄色
+  '#52C41A',  // 绿色
+  '#722ED1',  // 紫色
+  '#13C2C2',  // 青色
+  '#FF7A69',  // 珊瑚红
+  '#000000',  // 黑色
+  '#FFFFFF',  // 白色
+]
+
+// 选择预设颜色
+function selectPresetColor(color, target) {
+  if (target === 'stroke') strokeColor.value = color
+  else if (target === 'fill') fillColor.value = color
+  else if (target === 'gradientStart') gradientStartColor.value = color
+  else if (target === 'gradientEnd') gradientEndColor.value = color
+  onStyleChange()
+}
 
 // 面板更新标志
 let isUpdatingPanel = false
@@ -1457,6 +1523,34 @@ onUnmounted(() => {
   color: rgba(186, 224, 255, 0.6);
   font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
   letter-spacing: 0.3px;
+}
+
+/* 预设颜色色板 */
+.preset-colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.preset-color-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid rgba(64, 150, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 0;
+}
+
+.preset-color-swatch:hover {
+  transform: scale(1.15);
+  border-color: rgba(64, 150, 255, 0.5);
+}
+
+.preset-color-swatch.active {
+  border-color: #fff;
+  box-shadow: 0 0 0 1px #4096FF;
 }
 
 /* 实线/虚线切换 */

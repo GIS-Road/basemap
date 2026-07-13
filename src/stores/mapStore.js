@@ -20,7 +20,8 @@ function buildLayerTree(config) {
         name: l.name,
         url: l.url,
         type: l.type,
-        visible: l.visible
+        visible: l.visible,
+        opacity: l.opacity !== undefined ? l.opacity : 1
       }))
   }))
 }
@@ -180,6 +181,42 @@ export const useMapStore = defineStore('map', () => {
   }
 
   /**
+   * 设置图层透明度
+   */
+  function setLayerOpacity(layerId, opacity) {
+    const traverse = (nodes) => {
+      for (const node of nodes) {
+        if (node.id === layerId) {
+          node.opacity = opacity
+          return true
+        }
+        if (node.children && traverse(node.children)) {
+          return true
+        }
+      }
+      return false
+    }
+    traverse(layerTree.value)
+  }
+
+  /**
+   * 获取图层透明度
+   */
+  function getLayerOpacity(layerId) {
+    const traverse = (nodes) => {
+      for (const node of nodes) {
+        if (node.id === layerId) return node.opacity
+        if (node.children) {
+          const result = traverse(node.children)
+          if (result !== undefined) return result
+        }
+      }
+      return undefined
+    }
+    return traverse(layerTree.value)
+  }
+
+  /**
    * 获取所有叶子图层按树顺序的扁平列表（用于 z-index 分配）
    * 越靠前（索引越小）的图层 zIndex 越小，离用户越远
    */
@@ -218,6 +255,8 @@ export const useMapStore = defineStore('map', () => {
     toggleLayerVisibility,
     setLayerVisibility,
     getLayerVisibility,
+    setLayerOpacity,
+    getLayerOpacity,
     getFlatOrderedLayers,
     getCurrentLocation
   }

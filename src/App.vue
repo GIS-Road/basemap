@@ -164,7 +164,7 @@ import MapToggle from './components/MapToggle.vue'
 import DrawingToolbar from './components/DrawingToolbar.vue'
 
 const mapStore = useMapStore()
-const { initMap, switchBaseMap: switch2DBase, setLayerVisible, addLayerToTop, removeDynamicLayer, createOverlayAndAddToTop, syncLayerOrder, getCenter, getZoom, setView, flyToLocation, destroyMap } = useMap2D()
+const { initMap, switchBaseMap: switch2DBase, setLayerVisible, setLayerOpacity, addLayerToTop, removeDynamicLayer, createOverlayAndAddToTop, syncLayerOrder, getCenter, getZoom, setView, flyToLocation, destroyMap } = useMap2D()
 const { initViewer, getCenter: get3DCenter, getApproximateZoom, flyTo, destroyViewer } = useMap3D()
 
 const map2dRef = ref(null)
@@ -358,7 +358,7 @@ function handleModeChange(mode) {
 
 // ==================== 图层可见性与地图联动 ====================
 
-// 监听图层树变化，同步到地图图层显隐 + 层级顺序
+// 监听图层树变化，同步到地图图层显隐 + 层级顺序 + 透明度
 watch(() => mapStore.layerTree, () => {
   if (!map2d) return
   const traverse = (nodes) => {
@@ -375,6 +375,8 @@ watch(() => mapStore.layerTree, () => {
             removeDynamicLayer(map2d, node.id)
           }
         }
+        // 应用图层透明度
+        setLayerOpacity(map2d, node.id, node.opacity ?? 1)
       }
       if (node.children) traverse(node.children)
     }

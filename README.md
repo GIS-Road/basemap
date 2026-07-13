@@ -76,7 +76,7 @@ npm run build
 
 
 ## 联系作者
-微信公众号：GIS之路
+微信公众号：**GIS之路**
 
 个人微信：`shanhaigis`
 

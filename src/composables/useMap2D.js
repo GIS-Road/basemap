@@ -126,6 +126,16 @@ export function useMap2D() {
   }
 
   /**
+   * 按图层ID设置透明度（用于图层面板联动）
+   */
+  function setLayerOpacity(map, layerId, opacity) {
+    const layer = findLayerById(map.getLayers().getArray(), layerId)
+    if (layer) {
+      layer.setOpacity(opacity)
+    }
+  }
+
+  /**
    * 按 layerId 查找地图图层
    */
   function findLayerById(layers, id) {
@@ -269,6 +279,7 @@ export function useMap2D() {
     initMap,
     switchBaseMap,
     setLayerVisible,
+    setLayerOpacity,
     addLayerToTop,
     removeDynamicLayer,
     createOverlayAndAddToTop,
