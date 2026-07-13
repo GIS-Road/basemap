@@ -25,19 +25,47 @@
         <h1 class="header-title">在线底图服务系统</h1>
       </div>
       <div class="header-right">
+        <!-- 定位按钮 -->
+        <div
+          class="locate-btn"
+          :class="{ locating: mapStore.locateStatus === 'locating' }"
+          @click="handleLocate"
+          title="定位到当前位置"
+        >
+          <svg viewBox="0 0 16 16" width="14" height="14">
+            <circle cx="8" cy="8" r="2" fill="none" :stroke="mapStore.locateStatus === 'success' ? '#52c41a' : '#4096FF'" stroke-width="1.5" />
+            <circle cx="8" cy="8" r="5" fill="none" stroke="#4096FF" stroke-width="0.8" opacity="0.4" />
+            <line x1="8" y1="1" x2="8" y2="3" stroke="#4096FF" stroke-width="1.2" />
+            <line x1="8" y1="13" x2="8" y2="15" stroke="#4096FF" stroke-width="1.2" />
+            <line x1="1" y1="8" x2="3" y2="8" stroke="#4096FF" stroke-width="1.2" />
+            <line x1="13" y1="8" x2="15" y2="8" stroke="#4096FF" stroke-width="1.2" />
+          </svg>
+        </div>
+
         <span class="mode-badge" :class="mapStore.mapMode">
           {{ mapStore.mapMode === '2d' ? '二维模式' : '三维模式' }}
         </span>
-        <div class="coord-display">
-          <svg viewBox="0 0 14 14" width="14" height="14" style="margin-right: 4px;">
-            <circle cx="7" cy="7" r="1.5" fill="#4096FF" />
-            <circle cx="7" cy="7" r="5" fill="none" stroke="#4096FF" stroke-width="0.8" opacity="0.5" />
-            <line x1="7" y1="1" x2="7" y2="3.5" stroke="#4096FF" stroke-width="0.6" opacity="0.5" />
-            <line x1="7" y1="10.5" x2="7" y2="13" stroke="#4096FF" stroke-width="0.6" opacity="0.5" />
-            <line x1="1" y1="7" x2="3.5" y2="7" stroke="#4096FF" stroke-width="0.6" opacity="0.5" />
-            <line x1="10.5" y1="7" x2="13" y2="7" stroke="#4096FF" stroke-width="0.6" opacity="0.5" />
+        <!-- 地图坐标：鼠标移动实时显示 / 点击锁定 + 复制 -->
+        <div class="pick-coord" :class="{ active: pickedCoord || mouseCoord }">
+          <svg viewBox="0 0 14 14" width="13" height="13" style="margin-right: 3px;">
+            <path d="M3 2l3 10 2-4 3-2z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" />
+            <circle cx="8.5" cy="5.5" r="0.8" fill="currentColor" />
           </svg>
-          <span>{{ coordText }}</span>
+          <span class="pick-coord-text">{{ coordDisplayText }}</span>
+          <button
+            v-show="pickedCoord"
+            class="copy-btn"
+            @click="copyCoord"
+            :title="copyBtnText"
+          >
+            <svg v-if="copyBtnText === '已复制'" viewBox="0 0 14 14" width="12" height="12">
+              <polyline points="2,7 5.5,10.5 12,3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <svg v-else viewBox="0 0 14 14" width="12" height="12">
+              <rect x="4" y="4" width="8" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="1.2" />
+              <path d="M2 10V2h8" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+            </svg>
+          </button>
         </div>
       </div>
     </header>
@@ -53,6 +81,13 @@
           <div v-if="isLoading" class="map-loading">
             <div class="loading-spinner"></div>
             <p>地图加载中...</p>
+          </div>
+        </Transition>
+
+        <!-- 定位提示 -->
+        <Transition name="fade">
+          <div v-if="locateMsg" class="locate-toast">
+            {{ locateMsg }}
           </div>
         </Transition>
 
@@ -76,18 +111,43 @@
           @mode-change="handleModeChange"
         />
 
-        <!-- 底图选择器（悬浮在地图上的浮动工具栏） -->
+        <!-- 底图选择器（可折叠面板，默认收起） -->
         <div class="base-map-selector" v-if="mapStore.mapMode === '2d'">
-          <div
-            v-for="bm in mapStore.baseMaps"
-            :key="bm.id"
-            class="base-map-item"
-            :class="{ active: mapStore.activeBaseMap === bm.id }"
-            @click="switchBaseMap(bm.id)"
+          <button
+            class="base-map-toggle"
+            :class="{ expanded: baseMapExpanded }"
+            @click="baseMapExpanded = !baseMapExpanded"
+            title="底图切换"
           >
-            {{ bm.label }}
-          </div>
+            <svg viewBox="0 0 16 16" width="16" height="16">
+              <rect x="1" y="1" width="14" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/>
+              <rect x="3" y="3" width="4" height="4" rx="0.5" fill="currentColor" opacity="0.3"/>
+              <rect x="3" y="9" width="4" height="4" rx="0.5" fill="currentColor" opacity="0.5"/>
+              <rect x="9" y="3" width="4" height="4" rx="0.5" fill="currentColor" opacity="0.5" stroke="currentColor" stroke-width="0.5"/>
+              <rect x="9" y="9" width="4" height="4" rx="0.5" fill="currentColor" opacity="0.3"/>
+            </svg>
+          </button>
+          <Transition name="slide-right">
+            <div class="base-map-list" v-show="baseMapExpanded">
+              <div
+                v-for="bm in mapStore.baseMaps"
+                :key="bm.id"
+                class="base-map-item"
+                :class="{ active: mapStore.activeBaseMap === bm.id }"
+                @click="switchBaseMap(bm.id)"
+              >
+                {{ bm.label }}
+              </div>
+            </div>
+          </Transition>
         </div>
+
+        <!-- 绘制工具栏（右侧） -->
+        <DrawingToolbar
+          v-if="mapStore.mapMode === '2d' && map2d"
+          :map="map2d"
+          class="draw-toolbar-panel"
+        />
       </main>
     </div>
   </div>
@@ -95,26 +155,87 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { toLonLat } from 'ol/proj'
 import { useMapStore } from './stores/mapStore'
 import { useMap2D } from './composables/useMap2D'
 import { useMap3D } from './composables/useMap3D'
 import LayerTree from './components/LayerTree.vue'
 import MapToggle from './components/MapToggle.vue'
+import DrawingToolbar from './components/DrawingToolbar.vue'
 
 const mapStore = useMapStore()
-const { initMap, switchBaseMap: switch2DBase, getCenter, getZoom, setView, destroyMap } = useMap2D()
+const { initMap, switchBaseMap: switch2DBase, setLayerVisible, setLayerOpacity, addLayerToTop, removeDynamicLayer, createOverlayAndAddToTop, createWmtsOverlayAndAddToTop, syncLayerOrder, getCenter, getZoom, setView, flyToLocation, destroyMap } = useMap2D()
 const { initViewer, getCenter: get3DCenter, getApproximateZoom, flyTo, destroyViewer } = useMap3D()
 
 const map2dRef = ref(null)
 const map3dRef = ref(null)
 const isLoading = ref(false)
-const coordText = ref('104.00°E, 35.00°N')
+const locateMsg = ref('')
+const baseMapExpanded = ref(false)
+
+// ==================== 鼠标 / 点击拾取坐标 ====================
+
+const mouseCoord = ref(null)   // [lng, lat] | null — pointermove 实时更新
+const pickedCoord = ref(null)  // [lng, lat] | null — click 锁定
+const copyBtnText = ref('复制')
+
+function formatCoordText(coord) {
+  const lng = coord[0]
+  const lat = coord[1]
+  const absLng = Math.abs(lng).toFixed(6)
+  const absLat = Math.abs(lat).toFixed(6)
+  return `${absLng}°${lng >= 0 ? 'E' : 'W'}, ${absLat}°${lat >= 0 ? 'N' : 'S'}`
+}
+
+const coordDisplayText = computed(() => {
+  if (pickedCoord.value) return formatCoordText(pickedCoord.value)
+  if (mouseCoord.value) return formatCoordText(mouseCoord.value)
+  return '移动鼠标查看坐标'
+})
+
+const copyRawText = computed(() => {
+  if (!pickedCoord.value) return ''
+  return `${pickedCoord.value[0].toFixed(6)}, ${pickedCoord.value[1].toFixed(6)}`
+})
+
+async function copyCoord() {
+  if (!pickedCoord.value) return
+  try {
+    await navigator.clipboard.writeText(copyRawText.value)
+    copyBtnText.value = '已复制'
+    setTimeout(() => { copyBtnText.value = '复制' }, 1500)
+  } catch {
+    copyBtnText.value = '失败'
+    setTimeout(() => { copyBtnText.value = '复制' }, 1500)
+  }
+}
 
 let map2d = null
 let viewer3d = null
-let coordWatchHandle = null
 
-// 初始化二维地图
+// ==================== 定位功能 ====================
+
+async function handleLocate() {
+  try {
+    locateMsg.value = '正在获取位置...'
+    const pos = await mapStore.getCurrentLocation()
+
+    if (map2d && mapStore.mapMode === '2d') {
+      flyToLocation(map2d, [pos.lng, pos.lat], 14, 2000)
+    } else if (viewer3d && mapStore.mapMode === '3d') {
+      flyTo(viewer3d, [pos.lng, pos.lat], 14)
+    }
+
+    locateMsg.value = '已定位到当前位置'
+    setTimeout(() => { locateMsg.value = '' }, 2500)
+  } catch (err) {
+    locateMsg.value = `定位失败：${err.message || '未知错误'}`
+    setTimeout(() => { locateMsg.value = '' }, 3000)
+  }
+}
+
+// ==================== 初始化二维地图 ====================
+
 async function init2DMap() {
   if (!map2dRef.value) return
   await nextTick()
@@ -124,17 +245,31 @@ async function init2DMap() {
     baseMap: mapStore.activeBaseMap
   })
 
-  // 监听视角变化
+  // 监听视角变化（仅存 store 中心/缩放，不再显示中心坐标）
   map2d.on('moveend', () => {
     const center = getCenter(map2d)
     const zoom = getZoom(map2d)
     mapStore.setMapCenter([center[0], center[1]])
     mapStore.setMapZoom(zoom)
-    updateCoordDisplay(center)
+  })
+
+  // 鼠标移动实时显示经纬度
+  map2d.on('pointermove', (evt) => {
+    if (mapStore.isDrawingActive) return
+    const coord = toLonLat(evt.coordinate)
+    mouseCoord.value = [coord[0], coord[1]]
+  })
+
+  // 地图点击锁定拾取坐标
+  map2d.on('click', (evt) => {
+    if (mapStore.isDrawingActive) return
+    const coord = toLonLat(evt.coordinate)
+    pickedCoord.value = [coord[0], coord[1]]
   })
 }
 
-// 初始化三维地图
+// ==================== 初始化三维地图 ====================
+
 async function init3DMap() {
   if (!map3dRef.value) return
   await nextTick()
@@ -149,19 +284,11 @@ async function init3DMap() {
     const zoom = getApproximateZoom(viewer3d)
     mapStore.setMapCenter([center[0], center[1]])
     mapStore.setMapZoom(zoom)
-    updateCoordDisplay(center)
   })
 }
 
-function updateCoordDisplay(center) {
-  const lng = center[0].toFixed(2)
-  const lat = center[1].toFixed(2)
-  const lngDir = lng >= 0 ? 'E' : 'W'
-  const latDir = lat >= 0 ? 'N' : 'S'
-  coordText.value = `${Math.abs(lng)}°${lngDir}, ${Math.abs(lat)}°${latDir}`
-}
+// ==================== 底图切换 ====================
 
-// 切换底图
 function switchBaseMap(mapId) {
   mapStore.setActiveBaseMap(mapId)
   if (map2d) {
@@ -169,21 +296,20 @@ function switchBaseMap(mapId) {
   }
 }
 
-// 切换 2D/3D
+// ==================== 2D/3D 切换 ====================
+
 async function handleMapToggle() {
   isLoading.value = true
   const prevMode = mapStore.mapMode
 
   try {
     if (prevMode === '2d') {
-      // 切换到 3D
       mapStore.setMapMode('3d')
       await nextTick()
 
       if (!viewer3d) {
         await init3DMap()
       } else {
-        // 同步视角
         if (map2d) {
           const center = getCenter(map2d)
           const zoom = getZoom(map2d)
@@ -191,20 +317,17 @@ async function handleMapToggle() {
         }
       }
 
-      // 销毁 2D 地图（节约资源）
       if (map2d) {
         destroyMap(map2d)
         map2d = null
       }
     } else {
-      // 切换到 2D
       mapStore.setMapMode('2d')
       await nextTick()
 
       if (!map2d) {
         await init2DMap()
       } else {
-        // 同步视角
         if (viewer3d) {
           const center = get3DCenter(viewer3d)
           const zoom = getApproximateZoom(viewer3d)
@@ -212,7 +335,6 @@ async function handleMapToggle() {
         }
       }
 
-      // 销毁 3D 地球（节约资源）
       if (viewer3d) {
         destroyViewer(viewer3d)
         viewer3d = null
@@ -228,21 +350,68 @@ async function handleMapToggle() {
   }
 }
 
-// 直接模式切换（MapToggle 单选）
 function handleModeChange(mode) {
   if (mode !== mapStore.mapMode) {
     handleMapToggle()
   }
 }
 
-// 监听图层可见性变化（底图切换）
+// ==================== 图层可见性与地图联动 ====================
+
+// 监听图层树变化，同步到地图图层显隐 + 层级顺序 + 透明度
 watch(() => mapStore.layerTree, () => {
-  // 可在此处扩展图层显隐逻辑
+  if (!map2d) return
+  const traverse = (nodes) => {
+    for (const node of nodes) {
+      if (node.type !== 'group' && node.visible !== undefined) {
+        // 底图类型：通过可见性控制
+        if (node.type === 'base' || node.id.startsWith('tianditu') || node.id === 'osm' || node.id === 'arcgis') {
+          setLayerVisible(map2d, node.id, node.visible)
+        } else {
+          // 非底图图层（overlay / terrain 等）：动态添加/移除
+          if (node.visible) {
+            if (node.type === 'wmts') {
+              createWmtsOverlayAndAddToTop(map2d, node.id, node.url)
+            } else {
+              createOverlayAndAddToTop(map2d, node.id, node.url)
+            }
+          } else {
+            removeDynamicLayer(map2d, node.id)
+          }
+        }
+        // 应用图层透明度
+        setLayerOpacity(map2d, node.id, node.opacity ?? 1)
+      }
+      if (node.children) traverse(node.children)
+    }
+  }
+  traverse(mapStore.layerTree)
+
+  // 同步图层 z-index 顺序：越靠上 zIndex 越小（离用户越远），越靠下 zIndex 越大（离用户越近）
+  syncLayerOrder(map2d, mapStore.layerTree)
 }, { deep: true })
+
+// ==================== 生命周期 ====================
 
 onMounted(async () => {
   await nextTick()
   await init2DMap()
+
+  // 自动定位并飞至当前位置
+  try {
+    locateMsg.value = '正在获取位置...'
+    const pos = await mapStore.getCurrentLocation()
+    await nextTick()
+    if (map2d) {
+      // 首次加载用飞行动画定位到用户位置
+      flyToLocation(map2d, [pos.lng, pos.lat], 14, 2200)
+    }
+    locateMsg.value = '已定位到当前位置'
+    setTimeout(() => { locateMsg.value = '' }, 2500)
+  } catch (err) {
+    console.warn('自动定位失败，使用默认中心:', err.message)
+    locateMsg.value = ''
+  }
 })
 
 onUnmounted(() => {
@@ -301,6 +470,31 @@ onUnmounted(() => {
   gap: 16px;
 }
 
+/* 定位按钮 */
+.locate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid rgba(64, 150, 255, 0.2);
+}
+.locate-btn:hover {
+  background: rgba(64, 150, 255, 0.12);
+  border-color: rgba(64, 150, 255, 0.35);
+}
+.locate-btn.locating {
+  animation: locate-pulse 1s ease-in-out infinite;
+}
+
+@keyframes locate-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
 .mode-badge {
   padding: 3px 12px;
   border-radius: 12px;
@@ -321,13 +515,42 @@ onUnmounted(() => {
   border: 1px solid rgba(105, 177, 255, 0.2);
 }
 
-.coord-display {
+.pick-coord {
   display: flex;
   align-items: center;
   font-size: 12px;
-  color: var(--text-secondary);
+  color: rgba(139, 166, 204, 0.55);
   font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
   letter-spacing: 0.5px;
+  transition: color 0.2s;
+}
+
+.pick-coord.active {
+  color: #69b1ff;
+}
+
+.pick-coord.active .pick-coord-text {
+  color: #91caff;
+}
+
+.copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-left: 4px;
+  border: none;
+  border-radius: 4px;
+  background: rgba(64, 150, 255, 0.08);
+  color: rgba(139, 166, 204, 0.6);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover {
+  background: rgba(64, 150, 255, 0.18);
+  color: #91caff;
 }
 
 /* ===== 主体区域 ===== */
@@ -384,6 +607,23 @@ onUnmounted(() => {
   letter-spacing: 1px;
 }
 
+/* ===== 定位提示 Toast ===== */
+.locate-toast {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 20px;
+  background: rgba(13, 31, 60, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(64, 150, 255, 0.25);
+  border-radius: 8px;
+  color: var(--tech-blue-300);
+  font-size: 13px;
+  z-index: 100;
+  letter-spacing: 0.5px;
+}
+
 /* ===== 过渡动画 ===== */
 .fade-enter-active,
 .fade-leave-active {
@@ -394,23 +634,59 @@ onUnmounted(() => {
   opacity: 0;
 }
 
-/* ===== 底图选择器（浮动工具栏） ===== */
+/* ===== 底图选择器（可折叠面板） ===== */
 .base-map-selector {
   position: absolute;
   top: 12px;
-  right: 80px;
+  right: 12px;
+  display: flex;
+  align-items: stretch;
+  z-index: 20;
+}
+
+.base-map-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(13, 31, 60, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(64, 150, 255, 0.2);
+  border-radius: 8px;
+  color: rgba(139, 166, 204, 0.8);
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.base-map-toggle:hover {
+  color: #91caff;
+  border-color: rgba(64, 150, 255, 0.35);
+  background: rgba(64, 150, 255, 0.1);
+}
+
+.base-map-toggle.expanded {
+  border-radius: 8px 0 0 8px;
+  border-right-color: transparent;
+  color: #4096FF;
+  background: rgba(64, 150, 255, 0.12);
+}
+
+.base-map-list {
   display: flex;
   gap: 4px;
   background: rgba(13, 31, 60, 0.92);
   backdrop-filter: blur(8px);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border: 1px solid rgba(64, 150, 255, 0.15);
+  border-left: none;
+  border-radius: 0 8px 8px 0;
   padding: 4px;
-  z-index: 10;
+  white-space: nowrap;
 }
 
 .base-map-item {
-  padding: 5px 12px;
+  padding: 6px 12px;
   font-size: 12px;
   color: var(--text-secondary);
   border-radius: 6px;
@@ -428,5 +704,24 @@ onUnmounted(() => {
 .base-map-item.active {
   color: #fff;
   background: var(--tech-blue-700);
+}
+
+/* 底图面板展开/收起动画 */
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: all 0.25s ease;
+}
+
+.slide-right-enter-from,
+.slide-right-leave-to {
+  opacity: 0;
+  transform: translateX(-8px);
+}
+
+/* ===== 绘制工具栏定位 ===== */
+.draw-toolbar-panel {
+  position: absolute;
+  top: 60px;
+  right: 12px;
 }
 </style>

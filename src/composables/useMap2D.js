@@ -1,38 +1,74 @@
 import { ref } from 'vue'
-import Map from 'ol/Map'
+import OlMap from 'ol/Map'
 import View from 'ol/View'
 import TileLayer from 'ol/layer/Tile'
 import OSM from 'ol/source/OSM'
 import XYZ from 'ol/source/XYZ'
-import { fromLonLat, toLonLat } from 'ol/proj'
-import { defaults as defaultControls } from 'ol/control'
+import WMTS, { optionsFromCapabilities } from 'ol/source/WMTS'
+import WMTSCapabilities from 'ol/format/WMTSCapabilities'
+import Projection from 'ol/proj/Projection'
+import { addProjection, addCoordinateTransforms, getTransform, fromLonLat, toLonLat } from 'ol/proj'
+import Zoom from 'ol/control/Zoom'
+import Attribution from 'ol/control/Attribution'
 
-// 底图源配置
+// ====================== 注册 EPSG:4490 坐标系 (CGCS2000) ======================
+// 无需外部 proj4 库，通过坐标变换链实现 EPSG:4490 ↔ EPSG:4326 ↔ EPSG:3857
+const cgcs2000 = new Projection({
+  code: 'EPSG:4490',
+  units: 'degrees',
+  axisOrientation: 'enu'
+})
+addProjection(cgcs2000)
+
+// EPSG:4326 ↔ EPSG:4490：CGCS2000 与 WGS84 在网页地图精度下可视为等价
+addCoordinateTransforms(
+  'EPSG:4326', 'EPSG:4490',
+  (coord) => coord.slice(),
+  (coord) => coord.slice()
+)
+
+// EPSG:3857 ↔ EPSG:4490：通过 EPSG:4326 中转
+const to4326 = getTransform('EPSG:3857', 'EPSG:4326')
+const from4326 = getTransform('EPSG:4326', 'EPSG:3857')
+addCoordinateTransforms(
+  'EPSG:3857', 'EPSG:4490',
+  (coord) => to4326(coord),
+  (coord) => from4326(coord)
+)
+
+// ====================== 天地图 Token ======================
+const VITE_TDT_TOKEN = 'fa7ec9766b2c00747e3dd60ab3d05892'
+
+// ====================== 底图源配置 ======================
 const BASE_MAP_SOURCES = {
   osm: () => new TileLayer({
     source: new OSM(),
-    visible: true
+    visible: false,
+    properties: { layerId: 'osm' }
   }),
   tianditu_vec: () => new TileLayer({
     source: new XYZ({
-      url: 'https://t{0-7}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}&tk=YOUR_TIANDITU_KEY',
+      url: `https://t{0-7}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}&tk=${VITE_TDT_TOKEN}`,
       crossOrigin: 'anonymous'
     }),
-    visible: false
+    visible: false,
+    properties: { layerId: 'tianditu_vec' }
   }),
   tianditu_img: () => new TileLayer({
     source: new XYZ({
-      url: 'https://t{0-7}.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=YOUR_TIANDITU_KEY',
+      url: `https://t{0-7}.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=${VITE_TDT_TOKEN}`,
       crossOrigin: 'anonymous'
     }),
-    visible: false
+    visible: true, // 默认天地图影像
+    properties: { layerId: 'tianditu_img' }
   }),
   arcgis: () => new TileLayer({
     source: new XYZ({
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       crossOrigin: 'anonymous'
     }),
-    visible: false
+    visible: false,
+    properties: { layerId: 'arcgis' }
   })
 }
 
@@ -42,25 +78,26 @@ export function useMap2D() {
   function initMap(target, options = {}) {
     const {
       center = [104.0, 35.0],
-      zoom = 4,
-      baseMap = 'osm'
+      zoom = 14,
+      baseMap = 'tianditu_img'
     } = options
 
     const layers = Object.values(BASE_MAP_SOURCES).map(fn => fn())
 
-    const map = new Map({
+    // 视图使用 EPSG:3857 —— 天地图 img_w/vec_w 瓦片均为 Web Mercator 网格
+    // 坐标显示通过 toLonLat() 转为经纬度，EPSG:4490≈EPSG:4326 在民用精度下等价
+    const map = new OlMap({
       target,
       layers,
       view: new View({
-        center: fromLonLat(center),
+        center: fromLonLat(center),  // EPSG:4326 → EPSG:3857
         zoom,
         projection: 'EPSG:3857'
       }),
-      controls: defaultControls({
-        zoom: true,
-        rotate: false,
-        attribution: true
-      })
+      controls: [
+        new Zoom(),
+        new Attribution()
+      ]
     })
 
     // 设置初始底图
@@ -73,19 +110,181 @@ export function useMap2D() {
   function switchBaseMap(map, mapId) {
     const layers = map.getLayers().getArray()
     layers.forEach(layer => {
-      const source = layer.getSource()
-      if (source) {
-        let layerId = 'unknown'
-        if (source instanceof OSM) layerId = 'osm'
-        else if (source instanceof XYZ) {
-          const url = source.getUrls()?.[0] || ''
-          if (url.includes('tianditu') && url.includes('vec_w')) layerId = 'tianditu_vec'
-          else if (url.includes('tianditu') && url.includes('img_w')) layerId = 'tianditu_img'
-          else if (url.includes('arcgisonline')) layerId = 'arcgis'
-        }
-        layer.setVisible(layerId === mapId)
+      const id = layer.get('layerId')
+      if (id) {
+        layer.setVisible(id === mapId)
       }
     })
+  }
+
+  /**
+   * 按图层ID控制可见性（用于图层面板联动）
+   */
+  function setLayerVisible(map, layerId, visible) {
+    const layer = findLayerById(map.getLayers().getArray(), layerId)
+    if (layer) {
+      layer.setVisible(visible)
+    }
+  }
+
+  /**
+   * 按图层ID设置透明度（用于图层面板联动）
+   */
+  function setLayerOpacity(map, layerId, opacity) {
+    const layer = findLayerById(map.getLayers().getArray(), layerId)
+    if (layer) {
+      layer.setOpacity(opacity)
+    }
+  }
+
+  /**
+   * 按 layerId 查找地图图层
+   */
+  function findLayerById(layers, id) {
+    return layers.find(l => l.get('layerId') === id)
+  }
+
+  /**
+   * 同步图层顺序到地图：根据图层树中从上到下的顺序设置 zIndex
+   * 越靠上的图层 zIndex 越小（离用户越远），越靠下的图层 zIndex 越大（离用户越近）
+   * @param {ol/Map} map
+   * @param {Array} treeData - 图层树数据
+   */
+  function syncLayerOrder(map, treeData) {
+    let zIndex = 0
+    const allLayers = map.getLayers().getArray()
+    const traverse = (nodes) => {
+      for (const node of nodes) {
+        if (node.type !== 'group') {
+          const layer = findLayerById(allLayers, node.id)
+          if (layer) {
+            layer.setZIndex(zIndex)
+            zIndex++
+          }
+        }
+        if (node.children) traverse(node.children)
+      }
+    }
+    traverse(treeData)
+  }
+
+  // 动态图层注册表（用于 overlay / terrain 等非底图图层）
+  const dynamicLayers = new Map()
+
+  /**
+   * 添加动态图层到地图最上层（覆盖层/地形层等非底图图层）
+   * @param {ol/Map} map
+   * @param {string} layerId
+   * @param {ol/layer/Base} layer
+   */
+  function addLayerToTop(map, layerId, layer) {
+    // 如果已存在同 ID 图层，先移除旧的
+    removeDynamicLayer(map, layerId)
+    // 插入到集合末尾（渲染时在最上层）
+    map.getLayers().push(layer)
+    dynamicLayers.set(layerId, layer)
+  }
+
+  /**
+   * 移除动态图层
+   * @param {ol/Map} map
+   * @param {string} layerId
+   */
+  function removeDynamicLayer(map, layerId) {
+    const layer = dynamicLayers.get(layerId)
+    if (layer) {
+      map.removeLayer(layer)
+      dynamicLayers.delete(layerId)
+    }
+  }
+
+  /**
+   * 为覆盖层/地形层等非底图图层创建 TileLayer 并添加到地图最上层
+   * @param {ol/Map} map
+   * @param {string} layerId
+   * @param {string} url - XYZ 瓦片 URL 模板
+   */
+  function createOverlayAndAddToTop(map, layerId, url) {
+    if (!url) return
+    const layer = new TileLayer({
+      source: new XYZ({
+        url,
+        crossOrigin: 'anonymous'
+      }),
+      visible: true,
+      properties: { layerId }
+    })
+    addLayerToTop(map, layerId, layer)
+  }
+
+  /**
+   * 为 WMTS 图层解析 Capabilities XML 并添加到地图最上层
+   * @param {ol/Map} map
+   * @param {string} layerId
+   * @param {string} capabilitiesUrl - WMTS GetCapabilities XML 地址
+   * @param {Object} [options] - 覆盖选项
+   * @param {string} [options.layerName] - 图层名（不传则用 capabilities 中第一个图层）
+   * @param {string} [options.matrixSet] - 矩阵集名（不传则自动选择 EPSG:3857 兼容项）
+   */
+  async function createWmtsOverlayAndAddToTop(map, layerId, capabilitiesUrl, options = {}) {
+    if (!capabilitiesUrl) return
+
+    try {
+      const response = await fetch(capabilitiesUrl)
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      const xmlText = await response.text()
+
+      const parser = new WMTSCapabilities()
+      const caps = parser.read(xmlText)
+
+      // 优先使用用户指定的 layerName，否则取 Capabilities 中第一个图层
+      const layerName = options.layerName || (caps.Contents?.Layer?.[0]?.Identifier)
+      if (!layerName) {
+        console.warn(`[WMTS] 未找到有效图层: ${capabilitiesUrl}`)
+        return
+      }
+
+      // 自动选择 matrixSet：优先 EPSG:3857 / GoogleMapsCompatible / WGS84
+      const matrixSets = caps.Contents?.TileMatrixSet || []
+      const preferredMatrixSet = options.matrixSet
+        || matrixSets.find(ms => ms.Identifier === 'EPSG:3857')?.Identifier
+        || matrixSets.find(ms => ms.Identifier === 'GoogleMapsCompatible')?.Identifier
+        || matrixSets.find(ms => ms.Identifier?.includes('3857'))?.Identifier
+        || matrixSets[0]?.Identifier
+
+      if (!preferredMatrixSet) {
+        console.warn(`[WMTS] 未找到可用 matrixSet: ${capabilitiesUrl}`)
+        return
+      }
+
+      // 使用 optionsFromCapabilities 提取完整配置（tileGrid / url / projection 等）
+      const wmtsOptions = optionsFromCapabilities(caps, {
+        layer: layerName,
+        matrixSet: preferredMatrixSet
+      })
+
+      if (!wmtsOptions) {
+        console.warn(`[WMTS] optionsFromCapabilities 返回空: ${capabilitiesUrl}`)
+        return
+      }
+
+      const source = new WMTS({
+        ...wmtsOptions,
+        crossOrigin: 'anonymous',
+        requestEncoding: 'KVP'
+      })
+
+      const layer = new TileLayer({
+        source,
+        visible: true,
+        properties: { layerId }
+      })
+
+      addLayerToTop(map, layerId, layer)
+      console.log(`[WMTS] 图层加载成功: ${layerId} (layer=${layerName}, matrixSet=${preferredMatrixSet})`)
+    } catch (err) {
+      console.error(`[WMTS] 图层加载失败 ${layerId}:`, err)
+    }
   }
 
   function getCenter(map) {
@@ -101,6 +300,34 @@ export function useMap2D() {
       center: fromLonLat(center),
       zoom,
       duration: 500
+    })
+  }
+
+  /**
+   * 飞行动画：平滑飞至目标位置并缩放
+   * @param {ol/Map} map
+   * @param {[number, number]} center [lng, lat]
+   * @param {number} zoom
+   * @param {number} duration 动画时长（ms），默认 2000
+   */
+  function flyToLocation(map, center, zoom, duration = 2000) {
+    const view = map.getView()
+
+    // 先缩小到较低级别，制造"起飞"效果
+    view.animate({
+      zoom: view.getZoom() - 3,
+      duration: duration * 0.3
+    }, () => {
+      // 飞到目标位置并放大
+      view.animate({
+        center: fromLonLat(center),
+        zoom,
+        duration: duration * 0.7,
+        easing: function (t) {
+          // easeOutCubic：平滑减速
+          return 1 - Math.pow(1 - t, 3)
+        }
+      })
     })
   }
 
@@ -123,9 +350,17 @@ export function useMap2D() {
     mapInstance,
     initMap,
     switchBaseMap,
+    setLayerVisible,
+    setLayerOpacity,
+    addLayerToTop,
+    removeDynamicLayer,
+    createOverlayAndAddToTop,
+    createWmtsOverlayAndAddToTop,
+    syncLayerOrder,
     getCenter,
     getZoom,
     setView,
+    flyToLocation,
     getExtent,
     destroyMap
   }
