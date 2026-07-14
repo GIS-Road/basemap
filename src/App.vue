@@ -364,14 +364,14 @@ watch(() => mapStore.layerTree, () => {
   const traverse = (nodes) => {
     for (const node of nodes) {
       if (node.type !== 'group' && node.visible !== undefined) {
-        // 底图类型：通过可见性控制
-        if (node.type === 'base' || node.id.startsWith('tianditu') || node.id === 'osm' || node.id === 'arcgis') {
+        // 预加载底图（type=base 或 tianditu_img）：通过可见性控制
+        if (node.type === 'base' || node.id.startsWith('tianditu')) {
           setLayerVisible(map2d, node.id, node.visible)
         } else {
           // 非底图图层（overlay / terrain 等）：动态添加/移除
           if (node.visible) {
-            if (node.type === 'wmts') {
-              createWmtsOverlayAndAddToTop(map2d, node.id, node.url)
+            if (node.serviceType === 'wmts') {
+              createWmtsOverlayAndAddToTop(map2d, node.id, node.url, { layerName: node.name })
             } else {
               createOverlayAndAddToTop(map2d, node.id, node.url)
             }

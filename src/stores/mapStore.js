@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import layerConfig from '../config/layers.json'
+import layerConfig from '../config/layers.js'
 
 /**
- * 将 layers.json 扁平配置构建为图层树结构
+ * 将 layers.js 扁平配置构建为图层树结构
  */
 function buildLayerTree(config) {
   const { groups, layers } = config
@@ -20,6 +20,7 @@ function buildLayerTree(config) {
         name: l.name,
         url: l.url,
         type: l.type,
+        serviceType: l.serviceType,
         visible: l.visible,
         opacity: l.opacity !== undefined ? l.opacity : 1
       }))
