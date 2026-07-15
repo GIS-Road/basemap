@@ -165,14 +165,24 @@ export function useMap2D() {
   const dynamicLayers = new Map()
 
   /**
+   * 检查动态图层是否已加载
+   * @param {string} layerId
+   * @returns {boolean}
+   */
+  function hasDynamicLayer(layerId) {
+    return dynamicLayers.has(layerId)
+  }
+
+  /**
    * 添加动态图层到地图最上层（覆盖层/地形层等非底图图层）
+   * 如果同 ID 图层已存在，则跳过（不重复添加，不影响其他图层）
    * @param {ol/Map} map
    * @param {string} layerId
    * @param {ol/layer/Base} layer
    */
   function addLayerToTop(map, layerId, layer) {
-    // 如果已存在同 ID 图层，先移除旧的
-    removeDynamicLayer(map, layerId)
+    // 如果已存在同 ID 图层，跳过（避免重复添加影响其他图层）
+    if (dynamicLayers.has(layerId)) return
     // 插入到集合末尾（渲染时在最上层）
     map.getLayers().push(layer)
     dynamicLayers.set(layerId, layer)
@@ -227,6 +237,8 @@ export function useMap2D() {
    */
   async function createWmtsOverlayAndAddToTop(map, layerId, capabilitiesUrl, options = {}) {
     if (!capabilitiesUrl) return
+    // 如果图层已加载，跳过（避免重复加载影响其他图层）
+    if (dynamicLayers.has(layerId)) return
 
     try {
       // 优先使用缓存的 Capabilities 对象（Wayback 等 195 个图层共享同一 URL）
@@ -372,6 +384,7 @@ export function useMap2D() {
     setLayerOpacity,
     addLayerToTop,
     removeDynamicLayer,
+    hasDynamicLayer,
     createOverlayAndAddToTop,
     createWmtsOverlayAndAddToTop,
     syncLayerOrder,

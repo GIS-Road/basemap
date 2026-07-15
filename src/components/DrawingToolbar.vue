@@ -12,6 +12,12 @@
             </svg>
           </span>
           <span class="style-panel-title">{{ panelTitle }}</span>
+          <!-- 关闭按钮 -->
+          <button class="style-panel-close-btn" @click="closeStylePanel" title="关闭样式面板">
+            <svg viewBox="0 0 12 12" width="12" height="12">
+              <path d="M2 2 L10 10 M10 2 L2 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
         </div>
 
         <!-- 边线颜色 -->
@@ -1325,6 +1331,19 @@ function undoLast() {
   }
 }
 
+// ==================== 关闭样式面板 ====================
+function closeStylePanel() {
+  // 选择模式下：取消选中要素即可关闭面板
+  if (activeTool.value === 'Select' && selectedFeature.value) {
+    if (selectInteraction) selectInteraction.getFeatures().clear()
+    selectedFeature.value = null
+    isSelectPicked.value = false
+    return
+  }
+  // 绘制模式下：停用工具
+  deactivateTool()
+}
+
 // ==================== 键盘事件 ====================
 function handleKeydown(e) {
   if (e.key === 'Escape') {
@@ -1473,6 +1492,28 @@ onUnmounted(() => {
   color: #e6f0ff;
   font-weight: 600;
   letter-spacing: 0.5px;
+  flex: 1;
+}
+
+.style-panel-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(186, 224, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.style-panel-close-btn:hover {
+  background: rgba(255, 122, 105, 0.15);
+  color: rgba(255, 140, 120, 0.9);
 }
 
 .style-row {

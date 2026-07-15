@@ -1,29 +1,29 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import layerConfig from '../config/layers.js'
+import { de } from 'element-plus/es/locales.mjs'
 
 /**
- * 将 layers.js 扁平配置构建为图层树结构
+ * 将 layers.js children 树形配置构建为图层树结构
+ * config 格式：[{ id, label, expanded, children: [{ id, label, url, type, ... }] }]
  */
 function buildLayerTree(config) {
-  const { groups, layers } = config
-  return groups.map(group => ({
+  return config.map(group => ({
     id: group.id,
     label: group.label,
     type: 'group',
     expanded: group.expanded,
-    children: layers
-      .filter(l => l.group === group.id)
-      .map(l => ({
-        id: l.id,
-        label: l.label,
-        name: l.name,
-        url: l.url,
-        type: l.type,
-        serviceType: l.serviceType,
-        visible: l.visible,
-        opacity: l.opacity !== undefined ? l.opacity : 1
-      }))
+    icon:group.icon,
+    children: (group.children || []).map(l => ({
+      id: l.id,
+      label: l.label,
+      name: l.name,
+      url: l.url,
+      type: l.type,
+      serviceType: l.serviceType,
+      visible: l.visible,
+      opacity: l.opacity !== undefined ? l.opacity : 1
+    }))
   }))
 }
 
@@ -34,10 +34,12 @@ export const useMapStore = defineStore('map', () => {
   // 当前地图模式：'2d' | '3d'
   const mapMode = ref('2d')
 
-  // 底图列表（从配置中提取 base 分组图层）
-  const baseMaps = layerConfig.layers
-    .filter(l => l.group === 'base')
-    .map(l => ({ id: l.id, label: l.label }))
+  // 底图列表（与 useMap2D.js 中 BASE_MAP_SOURCES 的 key 对应）
+  const baseMaps = [
+    { id: 'tianditu_img', label: '天地图影像' },
+    { id: 'tdt_vector', label: '天地图矢量' },
+    { id: 'osm', label: 'OpenStreetMap' }
+  ]
 
   // 当前活跃底图 — 默认天地图影像
   const activeBaseMap = ref('tianditu_img')

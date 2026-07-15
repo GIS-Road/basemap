@@ -14,7 +14,7 @@
         <span>图层面板</span>
       </div>
       <div class="panel-toggle" @click="isCollapsed = !isCollapsed">
-        <svg viewBox="0 0 16 16" width="14" height="14" :style="{ transform: isCollapsed ? 'rotate(180deg)' : '' }">
+        <svg viewBox="0 0 16 16" width="14" height="14" :style="{ transform: !isCollapsed ? 'rotate(180deg)' : '' }">
           <path d="M6 4 L11 8 L6 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
       </div>
@@ -48,44 +48,26 @@
         node-key="id"
         :default-expanded-keys="defaultExpandedKeys"
         :expand-on-click-node="true"
-        :highlight-current="false"
+        :highlight-current="true"
+        :indent="20"
         :filter-node-method="filterNode"
-        show-checkbox
         draggable
         :allow-drag="allowDrag"
         :allow-drop="allowDrop"
-        @check="handleCheck"
+        @node-click="handleNodeClick"
         @node-drop="handleNodeDrop"
       >
         <template #default="{ data }">
-          <div class="tree-node" :class="{ 'is-layer': data.type !== 'group' }">
+          <div
+            class="tree-node"
+            :class="{ 'is-layer': data.type !== 'group', 'is-selected': selectedNodeId === data.id }"
+          >
             <div class="tree-node-main">
               <!-- 图标 -->
               <span class="node-icon">
-                <!-- 分组 -->
-                <svg v-if="data.type === 'group'" viewBox="0 0 14 14" width="14" height="14">
-                  <path d="M2 2.5h4l1.5 1.5H12a1 1 0 011 1V11a1 1 0 01-1 1H2a1 1 0 01-1-1V3.5a1 1 0 011-1z"
-                    fill="none" stroke="#4096FF" stroke-width="1" />
-                </svg>
-                <!-- 底图 - 矢量 -->
-                <svg v-else-if="data.type === 'base' && (data.id === 'osm' || data.id === 'tdt_vector')" viewBox="0 0 14 14" width="14" height="14">
-                  <path d="M2 11 L5 4 L8 8 L12 2" fill="none" stroke="#69b1ff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
-                  <circle cx="5" cy="4" r="1.2" fill="#69b1ff" />
-                  <circle cx="8" cy="8" r="1.2" fill="#69b1ff" />
-                  <circle cx="12" cy="2" r="1.2" fill="#69b1ff" />
-                </svg>
-                <!-- 底图 - 影像/卫星 -->
-                <svg v-else-if="data.type === 'base'" viewBox="0 0 14 14" width="14" height="14">
-                  <circle cx="7" cy="7" r="3.5" fill="none" stroke="#ffa940" stroke-width="1" />
-                  <ellipse cx="7" cy="7" rx="6" ry="2.5" fill="none" stroke="#ffa940" stroke-width="0.7" opacity="0.6" transform="rotate(-30 7 7)" />
-                  <ellipse cx="7" cy="7" rx="6" ry="2.5" fill="none" stroke="#ffa940" stroke-width="0.7" opacity="0.6" transform="rotate(30 7 7)" />
-                  <circle cx="7" cy="7" r="1.5" fill="#ffa940" opacity="0.25" />
-                </svg>
-                <!-- 覆盖层 -->
-                <svg v-else-if="data.type === 'overlay'" viewBox="0 0 14 14" width="14" height="14">
-                  <circle cx="7" cy="7" r="4" fill="none" stroke="#52c41a" stroke-width="1" />
-                  <circle cx="7" cy="7" r="1.2" fill="#52c41a" opacity="0.6" />
-                </svg>
+                <!-- 影像/卫星 -->
+                <img v-if="data.id === 'image'" class="layer-icon" :src="`new URL(${data.icon}, import.meta.url).href`" alt="图标" width="32" height="32">
+            
                 <!-- 地形 -->
                 <svg v-else-if="data.type === 'terrain'" viewBox="0 0 14 14" width="14" height="14">
                   <polyline points="1,11 4,7 7,9 10,3 13,6" fill="none" stroke="#ffa940" stroke-width="1"
@@ -97,8 +79,15 @@
                 </svg>
               </span>
 
-              <!-- 标签 -->
-              <span class="node-label">{{ data.label }}</span>
+              <!-- 标签（带截断 + 上方 tooltip） -->
+              <span
+                class="node-label-wrapper"
+                :data-truncated="truncatedMap[data.id] ? 'true' : 'false'"
+                @mouseenter="checkTruncation($event, data.id)"
+              >
+                <span class="node-label">{{ data.label }}</span>
+                <span class="node-label-tooltip">{{ data.label }}</span>
+              </span>
 
               <!-- 透明度设置图标（仅叶子节点，名称后） -->
               <span
@@ -204,7 +193,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useMapStore } from '../stores/mapStore'
-
+import { da } from 'element-plus/es/locales.mjs'
 const mapStore = useMapStore()
 const isCollapsed = ref(false)
 const treeRef = ref(null)
@@ -218,12 +207,26 @@ const popupPos = ref({ x: 0, y: 0 })
 
 const treeProps = {
   children: 'children',
-  label: 'label',
-  disabled: (data) => data.type === 'group'
+  label: 'label'
+}
+
+// 当前选中的图层节点 ID
+const selectedNodeId = ref(null)
+
+// 记录哪些图层名称被截断（仅截断时显示 tooltip）
+const truncatedMap = ref({})
+
+/**
+ * 鼠标进入标签时检测文字是否被截断
+ */
+function checkTruncation(event, id) {
+  const label = event.currentTarget.querySelector('.node-label')
+  if (label) {
+    truncatedMap.value[id] = label.scrollWidth > label.clientWidth
+  }
 }
 
 const treeData = computed(() => mapStore.layerTree)
-
 // 默认展开的分组（仅 expanded: true 的分组）
 const defaultExpandedKeys = computed(() => {
   return mapStore.layerTree
@@ -256,44 +259,15 @@ watch(filterText, (val) => {
   }
 })
 
-// ==================== 初始化 & 同步复选框 ====================
-
-// 收集所有可见叶子图层 ID
-function collectVisibleLeafIds(nodes) {
-  const ids = []
-  const traverse = (list) => {
-    for (const node of list) {
-      if (node.type !== 'group' && node.visible) {
-        ids.push(node.id)
-      }
-      if (node.children) traverse(node.children)
-    }
-  }
-  traverse(nodes)
-  return ids
-}
-
-/**
- * 将 mapStore 中的可见性状态同步到 el-tree 复选框
- */
-function syncCheckboxes() {
-  if (!treeRef.value) return
-  treeRef.value.setCheckedKeys(collectVisibleLeafIds(mapStore.layerTree))
-}
+// ==================== 初始化 ====================
 
 onMounted(() => {
-  nextTick(() => syncCheckboxes())
   document.addEventListener('click', onDocumentClick)
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', onDocumentClick)
 })
-
-// 监听图层树变化，同步复选框状态
-watch(() => mapStore.layerTree, () => {
-  nextTick(() => syncCheckboxes())
-}, { deep: true })
 
 // ==================== 拖拽控制 ====================
 
@@ -314,13 +288,12 @@ function handleNodeDrop(draggingNode, dropNode, dropType) {
   // el-tree 已自动更新 children 顺序，App.vue watcher 会同步地图层级
 }
 
-// ==================== 复选框变更 ====================
+// ==================== 节点选中 ====================
 
-function handleCheck(data, checkedState) {
-  // 仅处理叶子节点；分组节点由 CSS 隐藏复选框
+function handleNodeClick(data) {
+  // 仅叶子图层节点可选中（分组节点仅展开/折叠）
   if (data.type !== 'group') {
-    const isChecked = checkedState.checkedKeys.includes(data.id)
-    mapStore.setLayerVisibility(data.id, isChecked)
+    selectedNodeId.value = data.id
   }
 }
 
@@ -671,15 +644,15 @@ function onDocumentClick() {
 }
 
 .eye-visible {
-  color: var(--tech-blue-400);
+  color: rgba(186, 224, 255, 0.85);
 }
 
 .eye-hidden {
-  color: rgba(139, 166, 204, 0.35);
+  color: rgba(186, 224, 255, 0.3);
 }
 
 .eye-hidden:hover {
-  color: rgba(139, 166, 204, 0.7);
+  color: rgba(186, 224, 255, 0.6);
 }
 
 /* ===== 图层图标 ===== */
@@ -690,9 +663,15 @@ function onDocumentClick() {
   flex-shrink: 0;
 }
 
-/* ===== 标签 ===== */
-.node-label {
+/* ===== 标签容器 + 截断 + 上方 tooltip ===== */
+.node-label-wrapper {
   flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.node-label {
+  display: block;
   font-size: 13px;
   white-space: nowrap;
   overflow: hidden;
@@ -701,7 +680,36 @@ function onDocumentClick() {
   transition: color 0.2s;
 }
 
-/* ===== 拖拽手柄 ===== */
+/* 选中态：激活色高亮 */
+.tree-node.is-selected .node-label {
+  color: #4096FF;
+  font-weight: 500;
+}
+
+/* 上方完整名称 tooltip */
+.node-label-tooltip {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  background: rgba(13, 31, 60, 0.96);
+  color: #91caff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(64, 150, 255, 0.3);
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.node-label-wrapper[data-truncated="true"]:hover .node-label-tooltip {
+  opacity: 1;
+}
+
+/* ===== 拖拽手柄（滑入动画）===== */
 .drag-handle {
   display: flex;
   align-items: center;
@@ -712,13 +720,15 @@ function onDocumentClick() {
   border-radius: 3px;
   cursor: grab;
   color: rgba(139, 166, 204, 0.3);
-  transition: all 0.2s;
   opacity: 0;
+  transform: translateX(8px);
+  transition: all 0.25s ease;
   margin-right: 2px;
 }
 
 .tree-node:hover .drag-handle {
   opacity: 1;
+  transform: translateX(0);
 }
 
 .drag-handle:hover {
@@ -762,47 +772,26 @@ function onDocumentClick() {
 /* ===== 树节点内容布局 ===== */
 .layer-tree-container .el-tree-node__content {
   gap: 0 !important;
-  padding: 3px 8px;
+  padding-top: 3px;
+  padding-right: 8px;
+  padding-bottom: 3px;
+  /* padding-left 由 el-tree indent 内联样式控制，不在此覆盖 */
   border-radius: 6px;
   margin: 1px 0;
   transition: background 0.15s;
 }
 
 .layer-tree-container .el-tree-node__content:hover {
-  background: rgba(64, 150, 255, 0.06);
+  background: rgba(64, 150, 255, 0.08);
 }
 
-/* ===== 隐藏分组节点的复选框 ===== */
-.layer-tree-container .el-tree-node[aria-level="1"] > .el-tree-node__content > .el-checkbox {
-  display: none;
+/* ===== 选中节点高亮（激活色，非白色背景）===== */
+.layer-tree-container .el-tree-node.is-current > .el-tree-node__content {
+  background: rgba(64, 150, 255, 0.15) !important;
 }
 
-/* ===== 暗色复选框 ===== */
-.layer-tree-container .el-checkbox__inner {
-  background-color: rgba(255, 255, 255, 0.08) !important;
-  border-color: rgba(139, 166, 204, 0.35) !important;
-}
-
-.layer-tree-container .el-checkbox__input.is-checked .el-checkbox__inner {
-  background-color: var(--tech-blue-500, #4096FF) !important;
-  border-color: var(--tech-blue-500, #4096FF) !important;
-}
-
-.layer-tree-container .el-checkbox__inner::after {
-  border-color: #fff !important;
-}
-
-.layer-tree-container .el-checkbox__input.is-indeterminate .el-checkbox__inner {
-  background-color: var(--tech-blue-500, #4096FF) !important;
-  border-color: var(--tech-blue-500, #4096FF) !important;
-}
-
-.layer-tree-container .el-checkbox__input.is-indeterminate .el-checkbox__inner::before {
-  background-color: #fff !important;
-}
-
-.layer-tree-container .el-checkbox:hover .el-checkbox__inner {
-  border-color: var(--tech-blue-400) !important;
+.layer-tree-container .el-tree-node.is-current > .el-tree-node__content:hover {
+  background: rgba(64, 150, 255, 0.2) !important;
 }
 
 /* ===== 分组节点样式 ===== */
@@ -845,5 +834,10 @@ function onDocumentClick() {
 
 .layer-tree-container .el-tree-node__expand-icon.is-leaf {
   color: transparent !important;
+}
+
+.layer-icon{
+  width: 20px;
+  height: 20px;
 }
 </style>
