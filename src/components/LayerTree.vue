@@ -22,14 +22,34 @@
 
     <!-- 树形图层 -->
     <div class="layer-tree-container" v-show="!isCollapsed">
+      <!-- 搜索过滤框 -->
+      <div class="layer-search-wrapper">
+        <svg class="layer-search-icon" viewBox="0 0 16 16" width="14" height="14">
+          <circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.3" />
+          <line x1="11" y1="11" x2="14.5" y2="14.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+        </svg>
+        <input
+          v-model="filterText"
+          class="layer-search-input"
+          type="text"
+          placeholder="搜索图层..."
+        />
+        <span v-if="filterText" class="layer-search-clear" @click="filterText = ''">
+          <svg viewBox="0 0 12 12" width="10" height="10">
+            <path d="M2 2 L10 10 M10 2 L2 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          </svg>
+        </span>
+      </div>
+
       <el-tree
         ref="treeRef"
         :data="treeData"
         :props="treeProps"
         node-key="id"
-        default-expand-all
+        :default-expanded-keys="defaultExpandedKeys"
         :expand-on-click-node="true"
         :highlight-current="false"
+        :filter-node-method="filterNode"
         show-checkbox
         draggable
         :allow-drag="allowDrag"
@@ -48,7 +68,7 @@
                     fill="none" stroke="#4096FF" stroke-width="1" />
                 </svg>
                 <!-- 底图 - 矢量 -->
-                <svg v-else-if="data.type === 'base' && (data.id === 'osm' || data.id === 'tianditu_vec')" viewBox="0 0 14 14" width="14" height="14">
+                <svg v-else-if="data.type === 'base' && (data.id === 'osm' || data.id === 'tdt_vector')" viewBox="0 0 14 14" width="14" height="14">
                   <path d="M2 11 L5 4 L8 8 L12 2" fill="none" stroke="#69b1ff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
                   <circle cx="5" cy="4" r="1.2" fill="#69b1ff" />
                   <circle cx="8" cy="8" r="1.2" fill="#69b1ff" />
@@ -188,6 +208,7 @@ import { useMapStore } from '../stores/mapStore'
 const mapStore = useMapStore()
 const isCollapsed = ref(false)
 const treeRef = ref(null)
+const filterText = ref('')
 
 // ==================== 透明度弹出面板状态 ====================
 const activeOpacityId = ref(null)
@@ -202,6 +223,38 @@ const treeProps = {
 }
 
 const treeData = computed(() => mapStore.layerTree)
+
+// 默认展开的分组（仅 expanded: true 的分组）
+const defaultExpandedKeys = computed(() => {
+  return mapStore.layerTree
+    .filter(node => node.type === 'group' && node.expanded)
+    .map(node => node.id)
+})
+
+// ==================== 搜索过滤 ====================
+
+function filterNode(value, data) {
+  if (!value) return true
+  // 分组节点始终显示（以便展开查看子图层）
+  if (data.type === 'group') return true
+  return data.label.toLowerCase().includes(value.toLowerCase())
+}
+
+watch(filterText, (val) => {
+  treeRef.value?.filter(val)
+  // 搜索时自动展开所有分组，以便查看匹配的子图层
+  if (val) {
+    nextTick(() => {
+      const groupKeys = mapStore.layerTree
+        .filter(n => n.type === 'group')
+        .map(n => n.id)
+      groupKeys.forEach(key => {
+        const node = treeRef.value?.getNode(key)
+        if (node && !node.expanded) node.expand()
+      })
+    })
+  }
+})
 
 // ==================== 初始化 & 同步复选框 ====================
 
@@ -395,6 +448,61 @@ function onDocumentClick() {
   flex: 1;
   overflow-y: auto;
   padding: 8px 4px;
+}
+
+/* ===== 搜索过滤框 ===== */
+.layer-search-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 4px 8px;
+  padding: 0 8px;
+  height: 30px;
+  background: rgba(64, 150, 255, 0.06);
+  border: 1px solid rgba(64, 150, 255, 0.15);
+  border-radius: 6px;
+  transition: border-color 0.2s;
+}
+
+.layer-search-wrapper:focus-within {
+  border-color: rgba(64, 150, 255, 0.4);
+}
+
+.layer-search-icon {
+  flex-shrink: 0;
+  color: rgba(139, 166, 204, 0.5);
+}
+
+.layer-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 12px;
+  color: var(--text-primary);
+  min-width: 0;
+}
+
+.layer-search-input::placeholder {
+  color: rgba(139, 166, 204, 0.4);
+}
+
+.layer-search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  cursor: pointer;
+  color: rgba(139, 166, 204, 0.5);
+  transition: all 0.15s;
+}
+
+.layer-search-clear:hover {
+  color: #fff;
+  background: rgba(64, 150, 255, 0.15);
 }
 
 /* ===== 自定义树节点 ===== */

@@ -40,19 +40,20 @@ addCoordinateTransforms(
 const VITE_TDT_TOKEN = 'fa7ec9766b2c00747e3dd60ab3d05892'
 
 // ====================== 底图源配置 ======================
+// 预加载的底图图层，layerId 必须与 layers.js 中的 id 一致
 const BASE_MAP_SOURCES = {
   osm: () => new TileLayer({
     source: new OSM(),
     visible: false,
     properties: { layerId: 'osm' }
   }),
-  tianditu_vec: () => new TileLayer({
+  tdt_vector: () => new TileLayer({
     source: new XYZ({
       url: `https://t{0-7}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}&tk=${VITE_TDT_TOKEN}`,
       crossOrigin: 'anonymous'
     }),
     visible: false,
-    properties: { layerId: 'tianditu_vec' }
+    properties: { layerId: 'tdt_vector' }
   }),
   tianditu_img: () => new TileLayer({
     source: new XYZ({
@@ -61,14 +62,6 @@ const BASE_MAP_SOURCES = {
     }),
     visible: true, // 默认天地图影像
     properties: { layerId: 'tianditu_img' }
-  }),
-  arcgis: () => new TileLayer({
-    source: new XYZ({
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      crossOrigin: 'anonymous'
-    }),
-    visible: false,
-    properties: { layerId: 'arcgis' }
   })
 }
 
@@ -218,6 +211,12 @@ export function useMap2D() {
   }
 
   /**
+   * WMTS Capabilities 缓存：同一 URL 只 fetch + parse 一次
+   * key = capabilitiesUrl, value = parsed caps object
+   */
+  const wmtsCapsCache = new Map()
+
+  /**
    * 为 WMTS 图层解析 Capabilities XML 并添加到地图最上层
    * @param {ol/Map} map
    * @param {string} layerId
@@ -230,12 +229,22 @@ export function useMap2D() {
     if (!capabilitiesUrl) return
 
     try {
-      const response = await fetch(capabilitiesUrl)
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
-      const xmlText = await response.text()
+      // 优先使用缓存的 Capabilities 对象（Wayback 等 195 个图层共享同一 URL）
+      let caps = wmtsCapsCache.get(capabilitiesUrl)
+      if (!caps) {
+        const response = await fetch(capabilitiesUrl)
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        let xmlText = await response.text()
 
-      const parser = new WMTSCapabilities()
-      const caps = parser.read(xmlText)
+        // 部分 WMTS 服务（如 ESRI Wayback）的 XML 使用 https:// 命名空间，
+        // 而 OpenLayers 的 WMTSCapabilities 解析器仅识别 http:// 命名空间，
+        // 导致 Contents/TileMatrixSet 等节点无法匹配。此处做命名空间归一化。
+        xmlText = xmlText.replace(/https:\/\/www\.opengis\.net/g, 'http://www.opengis.net')
+
+        const parser = new WMTSCapabilities()
+        caps = parser.read(xmlText)
+        wmtsCapsCache.set(capabilitiesUrl, caps)
+      }
 
       // 优先使用用户指定的 layerName，否则取 Capabilities 中第一个图层
       const layerName = options.layerName || (caps.Contents?.Layer?.[0]?.Identifier)
@@ -268,11 +277,20 @@ export function useMap2D() {
         return
       }
 
-      const source = new WMTS({
+      // optionsFromCapabilities 已根据 Capabilities 自动判断 requestEncoding：
+      //   - 服务提供 ResourceURL 时返回 REST 编码 + REST URL 模板
+      //   - 否则返回 KVP 编码 + KVP 端点 URL
+      // 强制覆盖 requestEncoding 会导致编码与 URL 不匹配（REST 模板 + KVP 参数），
+      // 因此默认不覆盖，仅在调用方显式指定时才使用。
+      const sourceOptions = {
         ...wmtsOptions,
-        crossOrigin: 'anonymous',
-        requestEncoding: 'KVP'
-      })
+        crossOrigin: 'anonymous'
+      }
+      if (options.requestEncoding) {
+        sourceOptions.requestEncoding = options.requestEncoding
+      }
+
+      const source = new WMTS(sourceOptions)
 
       const layer = new TileLayer({
         source,
@@ -281,7 +299,7 @@ export function useMap2D() {
       })
 
       addLayerToTop(map, layerId, layer)
-      console.log(`[WMTS] 图层加载成功: ${layerId} (layer=${layerName}, matrixSet=${preferredMatrixSet})`)
+      console.log(`[WMTS] 图层加载成功: ${layerId} (layer=${layerName}, matrixSet=${preferredMatrixSet}, encoding=${sourceOptions.requestEncoding || wmtsOptions.requestEncoding})`)
     } catch (err) {
       console.error(`[WMTS] 图层加载失败 ${layerId}:`, err)
     }
