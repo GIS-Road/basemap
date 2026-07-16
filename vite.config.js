@@ -10,7 +10,15 @@ export default defineConfig({
   ],
   server: {
     port: 3000,
-    host: true
+    host: true,
+    proxy: {
+      '/api/maps-for-free': {
+        target: 'https://maps-for-free.com',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/api\/maps-for-free/, '')
+      }
+    }
   },
   resolve: {
     // https://cn.vitejs.dev/config/#resolve-alias
