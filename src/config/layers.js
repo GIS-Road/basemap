@@ -642,7 +642,7 @@ const layers = [
       },
       {
         "id": "crop__maps-for-free",
-        "label": "庄稼",
+        "label": "耕地",
         "name": "crop-World_maps-for-free",
         "url": `/api/maps-for-free/layer/crop/z{z}/row{y}/{z}_{x}-{y}.gif`,
         "group": "landuse",
@@ -708,7 +708,7 @@ const layers = [
       },
       {
         "id": "ice-maps-for-free",
-        "label": "ice",
+        "label": "冰原",
         "name": "ice-World_maps-for-free",
         "url": `/api/maps-for-free/layer/ice/z{z}/row{y}/{z}_{x}-{y}.gif`,
         "group": "landuse",
