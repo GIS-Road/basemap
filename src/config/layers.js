@@ -304,7 +304,7 @@ const layers = [
   {
     "id": "vector",
     "label": "矢量图层",
-    "expanded": true,
+    "expanded": false,
     "icon": `vector.svg`,
     "children": [
       {
@@ -380,46 +380,6 @@ const layers = [
     ]
   },
   //==========================矢量图层结束============================//
-  //==========================水系图层开始============================//
-  {
-    "id": "river",
-    "label": "水系图层",
-    "expanded": false,
-    "icon": `river.svg`,
-    "children": [
-      {
-        "id": "tencent-river",
-        "label": "腾讯路网标注图（水系）",
-        "name": "腾讯路网标注图（水系）",
-        "url": `https://rt0.map.gtimg.com/tile?z={z}&x={x}&y={-y}&type=vector&styleid=3`,
-        "group": "river",
-        "type": "image",
-        "serviceType": "xyz",
-        "visible": false
-      },
-    ]
-  },
-  //==========================水系图层结束============================//
-  //==========================灯光图层开始============================//
-  {
-    "id": "light",
-    "label": "灯光图层",
-    "expanded": false,
-    "icon": `light.svg`,
-    "children": [
-      {
-        "id": "Sentinel-2",
-        "label": "Sentinel-2 夜间灯光",
-        "name": "Sentinel-2",
-        "url": "https://tiles.maps.eox.at/wmts/1.0.0/WMTSCapabilities.xml",
-        "group": "light",
-        "type": "wmts",
-        "serviceType": "wmts",
-        "visible": false
-      },
-    ]
-  },
-  //==========================灯光图层结束============================//
   //==========================地形图层开始============================//
   {
     "id": "terrain",
@@ -431,11 +391,12 @@ const layers = [
         "id": "terrain-World_maps-for-free",
         "label": "maps-for-free-World-Terrain 地形",
         "name": "World_maps-for-free",
-        "url": `https://maps-for-free.com/layer/relief/z{z}/row{y}/{z}_{x}-{y}.jpg`,
+        "url": `/api/maps-for-free/layer/relief/z{z}/row{y}/{z}_{x}-{y}.jpg`,
         "group": "terrain",
         "type": "terrain",
         "serviceType": "xyz",
-        "visible": true
+        "visible": false,
+        "maxZoom": 18
       },
       {
         "id": "terrain-World_Ocean_Base",
@@ -520,6 +481,57 @@ const layers = [
     ]
   },
   //==========================地形图层结束============================//
+  //==========================水系图层开始============================//
+  {
+    "id": "river",
+    "label": "水系图层",
+    "expanded": false,
+    "icon": `river.svg`,
+    "children": [
+      {
+        "id": "tencent-river",
+        "label": "腾讯路网标注图（水系）",
+        "name": "腾讯路网标注图（水系）",
+        "url": `https://rt0.map.gtimg.com/tile?z={z}&x={x}&y={-y}&type=vector&styleid=3`,
+        "group": "river",
+        "type": "image",
+        "serviceType": "xyz",
+        "visible": false
+      },
+      {
+        "id": "river-World_maps-for-free",
+        "label": "maps-for-free-World-river",
+        "name": "river-World_maps-for-free",
+        "url": `/api/maps-for-free/layer/water/z{z}/row{y}/{z}_{x}-{y}.gif`,
+        "group": "river",
+        "type": "image",
+        "serviceType": "xyz",
+        "visible": false,
+        "maxZoom": 18
+      },
+    ]
+  },
+  //==========================水系图层结束============================//
+  //==========================灯光图层开始============================//
+  {
+    "id": "light",
+    "label": "灯光图层",
+    "expanded": false,
+    "icon": `light.svg`,
+    "children": [
+      {
+        "id": "Sentinel-2",
+        "label": "Sentinel-2 夜间灯光",
+        "name": "Sentinel-2",
+        "url": "https://tiles.maps.eox.at/wmts/1.0.0/WMTSCapabilities.xml",
+        "group": "light",
+        "type": "wmts",
+        "serviceType": "wmts",
+        "visible": false
+      },
+    ]
+  },
+  //==========================灯光图层结束============================//
   //==========================路网图层开始============================//
   {
     "id": "road-net",
@@ -566,6 +578,17 @@ const layers = [
         "type": "road",
         "serviceType": "xyz",
         "visible": false
+      },
+      {
+        "id": "road-World_maps-for-free",
+        "label": "road-maps-for-free",
+        "name": "road-World_maps-for-free",
+        "url": `/api/maps-for-free/layer/streets/z{z}/row{y}/{z}_{x}-{y}.gif`,
+        "group": "road-net",
+        "type": "road",
+        "serviceType": "xyz",
+        "visible": false,
+        "maxZoom": 18
       },
     ]
   },
@@ -616,6 +639,83 @@ const layers = [
         "type": "landuse",
         "serviceType": "wmts",
         "visible": false
+      },
+      {
+        "id": "crop__maps-for-free",
+        "label": "庄稼",
+        "name": "crop-World_maps-for-free",
+        "url": `/api/maps-for-free/layer/crop/z{z}/row{y}/{z}_{x}-{y}.gif`,
+        "group": "landuse",
+        "type": "landuse",
+        "serviceType": "xyz",
+        "visible": false,
+        "maxZoom": 18
+      },
+      {
+        "id": "grass_maps-for-free",
+        "label": "草地",
+        "name": "grass-World_maps-for-free",
+        "url": `/api/maps-for-free/layer/grass/z{z}/row{y}/{z}_{x}-{y}.gif`,
+        "group": "landuse",
+        "type": "landuse",
+        "serviceType": "xyz",
+        "visible": false,
+        "maxZoom": 18
+      },
+      {
+        "id": "forest_maps-for-free",
+        "label": "林地",
+        "name": "forest-World_maps-for-free",
+        "url": `/api/maps-for-free/layer/forest/z{z}/row{y}/{z}_{x}-{y}.gif`,
+        "group": "landuse",
+        "type": "landuse",
+        "serviceType": "xyz",
+        "visible": false,
+        "maxZoom": 18
+      },
+      {
+        "id": "tundra-maps-for-free",
+        "label": "苔原",
+        "name": "tundra-World_maps-for-free",
+        "url": `/api/maps-for-free/layer/tundra/z{z}/row{y}/{z}_{x}-{y}.gif`,
+        "group": "landuse",
+        "type": "landuse",
+        "serviceType": "xyz",
+        "visible": false,
+        "maxZoom": 18
+      },
+      {
+        "id": "sand-maps-for-free",
+        "label": "荒漠|荒原",
+        "name": "sand-World_maps-for-free",
+        "url": `/api/maps-for-free/layer/sand/z{z}/row{y}/{z}_{x}-{y}.gif`,
+        "group": "landuse",
+        "type": "landuse",
+        "serviceType": "xyz",
+        "visible": false,
+        "maxZoom": 18
+      },
+      {
+        "id": "swamp-maps-for-free",
+        "label": "沼泽",
+        "name": "swamp-World_maps-for-free",
+        "url": `/api/maps-for-free/layer/swamp/z{z}/row{y}/{z}_{x}-{y}.gif`,
+        "group": "landuse",
+        "type": "landuse",
+        "serviceType": "xyz",
+        "visible": false,
+        "maxZoom": 18
+      },
+      {
+        "id": "ice-maps-for-free",
+        "label": "ice",
+        "name": "ice-World_maps-for-free",
+        "url": `/api/maps-for-free/layer/ice/z{z}/row{y}/{z}_{x}-{y}.gif`,
+        "group": "landuse",
+        "type": "landuse",
+        "serviceType": "xyz",
+        "visible": false,
+        "maxZoom": 18
       },
     ]
   },
