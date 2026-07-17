@@ -707,6 +707,24 @@ function onDocumentClick() {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
+.el-tree-node:first-child .node-label-tooltip {
+  position: absolute;
+  bottom: calc(100% - 50px);
+  left: 0;
+  background: rgba(13, 31, 60, 0.96);
+  color: #91caff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(64, 150, 255, 0.3);
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
 .node-label-wrapper[data-truncated="true"]:hover .node-label-tooltip {
   opacity: 1;
 }

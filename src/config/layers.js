@@ -7,7 +7,7 @@ const GEOVISEARTH = "15d2ddab335383b5d485b78a3e04ac9f92683ee2e3b04cdf862cb292168
 const WAYBACK_WMTS_URL = "https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/WMTS/1.0.0/WMTSCapabilities.xml"
 
 // ESRI Wayback 历史影像图层列表 (从 WMTS Capabilities 自动提取)
-// 共 195 个图层，时间跨度: 2014-02-20 ~ 2026-06-30
+// 共 195 个图层，时间跨度: 2014_02_20 ~ 2026_06_30
 const WAYBACK_LAYERS = [
   { id: "WB_2026_R06", date: "2026-06-30" },
   { id: "WB_2026_R05", date: "2026-05-28" },
@@ -208,7 +208,7 @@ const WAYBACK_LAYERS = [
 
 // 从 WAYBACK_LAYERS 生成图层配置对象
 const waybackLayerConfigs = WAYBACK_LAYERS.map(wb => ({
-  id: `wayback-${wb.id}`,
+  id: `wayback_${wb.id}`,
   label: `Wayback ${wb.date}`,
   name: wb.id,
   url: WAYBACK_WMTS_URL,
@@ -220,6 +220,129 @@ const waybackLayerConfigs = WAYBACK_LAYERS.map(wb => ({
 
 const iconPath = "@/assets/image/layers/"
 const layers = [
+  //==========================地形图层开始============================//
+  {
+    "id": "terrain",
+    "label": "地形图层",
+    "expanded": true,
+    "icon": `terrain.svg`,
+    "children": [
+      {
+        "id": "Relief_esri_maps_white",
+        "label": "山体阴影_白色_esri",
+        "name": "山体阴影_白色_esri",
+        "url": `https://server.arcgisonline.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}`,
+        "group": "terrain",
+        "type": "terrain",
+        "serviceType": "xyz",
+        "visible": false,
+        "maxZoom": 18
+      },
+      {
+        "id": "relief_esri—black",
+        "label": "山体阴影_黑色_esri",
+        "name": "山体阴影_黑色_esri",
+        "url": `https://server.arcgisonline.com/arcgis/rest/services/Elevation/World_Hillshade_Dark/MapServer/tile/{z}/{y}/{x}`,
+        "group": "terrain",
+        "type": "terrain",
+        "serviceType": "xyz",
+        "visible": false,
+        "maxZoom": 18
+      },
+      {
+        "id": "terrain_World_maps_for_free",
+        "label": "maps_for_free_World_Terrain 地形",
+        "name": "World_maps_for_free",
+        "url": `/api/maps_for_free/layer/relief/z{z}/row{y}/{z}_{x}_{y}.jpg`,
+        "group": "terrain",
+        "type": "terrain",
+        "serviceType": "xyz",
+        "visible": false,
+        "maxZoom": 18
+      },
+      {
+        "id": "terrain_World_Ocean_Base",
+        "label": "地形_World_Ocean_Base",
+        "name": "地形_World_Ocean_Base",
+        "url": `https://server.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}`,
+        "group": "terrain",
+        "type": "terrain",
+        "serviceType": "xyz",
+        "visible": false
+      },
+      {
+        "id": "terrain_EMODnet",
+        "label": "地形_欧洲海洋观测EMODnet",
+        "name": "地形_欧洲海洋观测EMODnet",
+        "url": `https://tiles.emodnet_bathymetry.eu/2020/baselayer/web_mercator/{z}/{x}/{y}.png`,
+        "group": "terrain",
+        "type": "terrain",
+        "serviceType": "xyz",
+        "visible": false
+      },
+      {
+        "id": "terrain_Esri_Topography",
+        "label": "Esri Topography Map地形底图",
+        "name": "Esri Topography Map地形底图",
+        "url": `http://server.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}`,
+        "group": "terrain",
+        "type": "terrain",
+        "serviceType": "xyz",
+        "visible": false
+      },
+      {
+        "id": "terrain_Esri_Shaded_Relief",
+        "label": "Eris Shaded Relief 地形",
+        "name": "Eris Shaded Relief 地形",
+        "url": `https://server.arcgisonline.com/arcgis/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}`,
+        "group": "terrain",
+        "type": "terrain",
+        "serviceType": "xyz",
+        "visible": false
+      },
+      {
+        "id": "terrain_Esri_World_Physical_Map",
+        "label": "Eris World_Physical_Map",
+        "name": "Eris World_Physical_Map",
+        "url": `https://server.arcgisonline.com/arcgis/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}`,
+        "group": "terrain",
+        "type": "terrain",
+        "serviceType": "xyz",
+        "visible": false
+      },
+      {
+        "id": "terrain_World_Terrain_Base",
+        "label": "Eris World_Terrain_Base",
+        "name": "Eris World_Terrain_Base",
+        "url": `https://server.arcgisonline.com/arcgis/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}`,
+        "group": "terrain",
+        "type": "terrain",
+        "serviceType": "xyz",
+        "visible": false
+      },
+      {
+        "id": "terrain_google_pure_landuse",
+        "label": "谷歌地形图_纯图_土地利用",
+        "name": "谷歌地形图_纯图_土地利用",
+        "url": `http://mt0.google.com/vt/lyrs=p&hl=en&x={x}&y={y}&z={z}&s=Ga&apistyle=s.e:l|p.v:off,s.t:1|s.e:g|p.v:off,s.t:21|p.v:off,s.t:20|p.v:off,s.t:2|p.v:off,s.t:3|p.v:off,s.t:3|s.e:l.i|p.v:off,s.t:4|p.v:off`,
+        "group": "terrain",
+        "type": "terrain",
+        "serviceType": "xyz",
+        "visible": false
+      },
+      {
+        "id": "terrain_google_pure_gray",
+        "label": "谷歌地形图_纯图_灰色",
+        "name": "Eris World_Terrain_Base",
+        "url": `http://www.google.com/maps/vt/pb=!1m4!1m3!1i{z}!2i{x}!3i{y}!2m1!1e5`,
+        "group": "terrain",
+        "type": "terrain",
+        "serviceType": "xyz",
+        "visible": false
+      },
+    ]
+  },
+  //==========================地形图层结束============================//
   //==========================影像图层开始============================//
   {
     "id": "image",
@@ -239,7 +362,7 @@ const layers = [
       },
       {
         "id": "geovisearth",
-        "label": "星图地球-影像",
+        "label": "星图地球_影像",
         "name": "星图地球",
         "url": "https://tiles.geovisearth.com/base/v1/img/{z}/{x}/{y}?format=webp&tmsIds=w&token=" + GEOVISEARTH,
         "group": "image",
@@ -248,8 +371,8 @@ const layers = [
         "visible": false
       },
       {
-        "id": "esri-World_Imagery",
-        "label": "ArcGIS 卫星图-World_Imagery",
+        "id": "esri_World_Imagery",
+        "label": "ArcGIS 卫星图_World_Imagery",
         "name": "World_Imagery",
         "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
         "group": "image",
@@ -258,27 +381,7 @@ const layers = [
         "visible": false
       },
       {
-        "id": "bing-image",
-        "label": "影像_Bing",
-        "name": "影像_Bing",
-        "url": "http://ecn.t{0-3}.tiles.virtualearth.net/tiles/a{q}.jpeg?g=7786",
-        "group": "image",
-        "type": "image",
-        "serviceType": "xyz",
-        "visible": false
-      },
-      {
-        "id": "google-origin-image",
-        "label": "影像_谷歌原版影像",
-        "name": "影像_谷歌原版影像",
-        "url": `https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}`,
-        "group": "image",
-        "type": "image",
-        "serviceType": "xyz",
-        "visible": false
-      },
-      {
-        "id": "gaode-image",
+        "id": "gaode_image",
         "label": "高德卫星图(GJC02)",
         "name": "高德卫星图(GJC02)",
         "url": `https://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}`,
@@ -288,7 +391,27 @@ const layers = [
         "visible": false
       },
       {
-        "id": "google-image-hybrid",
+        "id": "bing_image",
+        "label": "影像_Bing",
+        "name": "影像_Bing",
+        "url": "http://ecn.t{0_3}.tiles.virtualearth.net/tiles/a{q}.jpeg?g=7786",
+        "group": "image",
+        "type": "image",
+        "serviceType": "xyz",
+        "visible": false
+      },
+      {
+        "id": "google_origin_image",
+        "label": "影像_谷歌原版影像",
+        "name": "影像_谷歌原版影像",
+        "url": `https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}`,
+        "group": "image",
+        "type": "image",
+        "serviceType": "xyz",
+        "visible": false
+      },
+      {
+        "id": "google_image_hybrid",
         "label": "谷歌卫星混合图层(GCJ02)",
         "name": "谷歌卫星混合图层(GCJ02)",
         "url": `http://mt.google.com/vt?lyrs=s,m&gl=CN&x={x}&y={y}&z={z}`,
@@ -318,17 +441,17 @@ const layers = [
         "visible": false
       },
       {
-        "id": "esri-USA_Topo_Maps",
+        "id": "esri_USA_Topo_Maps",
         "label": "USA Topo Maps",
         "name": "USA Topo Maps",
-        "url": "https://server.arcgisonline.com/arcgis/rest/services/USA_Topo_Maps/MapServer/WMTS/1.0.0/WMTSCapabilities.xml",
+        "url": "https://server.arcgisonline.com/arcgis/rest/services/USA_Topo_Maps/MapServer/tile/{z}/{y}/{x}",
         "group": "vector",
         "type": "vector",
-        "serviceType": "wmts",
+        "serviceType": "xyz",
         "visible": false
       },
       {
-        "id": "esri-World_Topo_Map",
+        "id": "esri_World_Topo_Map",
         "label": "World_Topo_Map",
         "name": "World_Topo_Map",
         "url": "https://server.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
@@ -338,7 +461,7 @@ const layers = [
         "visible": false
       },
       {
-        "id": "osm-vector",
+        "id": "osm_vector",
         "label": "OpenStreetMap",
         "name": "osm",
         "url": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -358,7 +481,7 @@ const layers = [
         "visible": false
       },
       {
-        "id": "OpenStreetMap-vector",
+        "id": "OpenStreetMap_vector",
         "label": "OpenStreetMap",
         "name": "OpenStreetMap",
         "url": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -368,10 +491,10 @@ const layers = [
         "visible": false
       },
       {
-        "id": "Bing电子地图-vector",
+        "id": "Bing电子地图_vector",
         "label": "Bing电子地图",
         "name": "Bing电子地图",
-        "url": "https://t.ssl.ak.dynamic.tiles.virtualearth.net/comp/ch/a{q}.ipeg?g=0&mkt=zh-CN&it=GB,LC&shading=hill&n=t&og=2697&sv=9.38&cstl=s23&o=png&ur=hk",
+        "url": "https://t.ssl.ak.dynamic.tiles.virtualearth.net/comp/ch/a{q}.ipeg?g=0&mkt=zh_CN&it=GB,LC&shading=hill&n=t&og=2697&sv=9.38&cstl=s23&o=png&ur=hk",
         "group": "vector",
         "type": "vector",
         "serviceType": "xyz",
@@ -380,107 +503,6 @@ const layers = [
     ]
   },
   //==========================矢量图层结束============================//
-  //==========================地形图层开始============================//
-  {
-    "id": "terrain",
-    "label": "地形图层",
-    "expanded": true,
-    "icon": `terrain.svg`,
-    "children": [
-      {
-        "id": "terrain-World_maps-for-free",
-        "label": "maps-for-free-World-Terrain 地形",
-        "name": "World_maps-for-free",
-        "url": `/api/maps-for-free/layer/relief/z{z}/row{y}/{z}_{x}-{y}.jpg`,
-        "group": "terrain",
-        "type": "terrain",
-        "serviceType": "xyz",
-        "visible": false,
-        "maxZoom": 18
-      },
-      {
-        "id": "terrain-World_Ocean_Base",
-        "label": "地形_World_Ocean_Base",
-        "name": "地形_World_Ocean_Base",
-        "url": `https://server.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}`,
-        "group": "terrain",
-        "type": "terrain",
-        "serviceType": "xyz",
-        "visible": false
-      },
-      {
-        "id": "terrain-EMODnet",
-        "label": "地形_欧洲海洋观测EMODnet",
-        "name": "地形_欧洲海洋观测EMODnet",
-        "url": `https://tiles.emodnet-bathymetry.eu/2020/baselayer/web_mercator/{z}/{x}/{y}.png`,
-        "group": "terrain",
-        "type": "terrain",
-        "serviceType": "xyz",
-        "visible": false
-      },
-      {
-        "id": "terrain-Esri-Topography",
-        "label": "Esri Topography Map地形底图",
-        "name": "Esri Topography Map地形底图",
-        "url": `http://server.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}`,
-        "group": "terrain",
-        "type": "terrain",
-        "serviceType": "xyz",
-        "visible": false
-      },
-      {
-        "id": "terrain-Esri-Shaded-Relief",
-        "label": "Eris Shaded Relief 地形",
-        "name": "Eris Shaded Relief 地形",
-        "url": `https://server.arcgisonline.com/arcgis/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}`,
-        "group": "terrain",
-        "type": "terrain",
-        "serviceType": "xyz",
-        "visible": false
-      },
-      {
-        "id": "terrain-Esri-World_Physical_Map",
-        "label": "Eris World_Physical_Map",
-        "name": "Eris World_Physical_Map",
-        "url": `https://server.arcgisonline.com/arcgis/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}`,
-        "group": "terrain",
-        "type": "terrain",
-        "serviceType": "xyz",
-        "visible": false
-      },
-      {
-        "id": "terrain-World_Terrain_Base",
-        "label": "Eris World_Terrain_Base",
-        "name": "Eris World_Terrain_Base",
-        "url": `https://server.arcgisonline.com/arcgis/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}`,
-        "group": "terrain",
-        "type": "terrain",
-        "serviceType": "xyz",
-        "visible": false
-      },
-      {
-        "id": "terrain-google-pure-landuse",
-        "label": "谷歌地形图-纯图-土地利用",
-        "name": "谷歌地形图-纯图-土地利用",
-        "url": `http://mt0.google.com/vt/lyrs=p&hl=en&x={x}&y={y}&z={z}&s=Ga&apistyle=s.e:l|p.v:off,s.t:1|s.e:g|p.v:off,s.t:21|p.v:off,s.t:20|p.v:off,s.t:2|p.v:off,s.t:3|p.v:off,s.t:3|s.e:l.i|p.v:off,s.t:4|p.v:off`,
-        "group": "terrain",
-        "type": "terrain",
-        "serviceType": "xyz",
-        "visible": false
-      },
-      {
-        "id": "terrain-google-pure-gray",
-        "label": "谷歌地形图-纯图-灰色",
-        "name": "Eris World_Terrain_Base",
-        "url": `http://www.google.com/maps/vt/pb=!1m4!1m3!1i{z}!2i{x}!3i{y}!2m1!1e5`,
-        "group": "terrain",
-        "type": "terrain",
-        "serviceType": "xyz",
-        "visible": false
-      },
-    ]
-  },
-  //==========================地形图层结束============================//
   //==========================水系图层开始============================//
   {
     "id": "river",
@@ -489,20 +511,20 @@ const layers = [
     "icon": `river.svg`,
     "children": [
       {
-        "id": "tencent-river",
+        "id": "tencent_river",
         "label": "腾讯路网标注图（水系）",
         "name": "腾讯路网标注图（水系）",
-        "url": `https://rt0.map.gtimg.com/tile?z={z}&x={x}&y={-y}&type=vector&styleid=3`,
+        "url": `https://rt0.map.gtimg.com/tile?z={z}&x={x}&y={_y}&type=vector&styleid=3`,
         "group": "river",
         "type": "image",
         "serviceType": "xyz",
         "visible": false
       },
       {
-        "id": "river-World_maps-for-free",
-        "label": "maps-for-free-World-river",
-        "name": "river-World_maps-for-free",
-        "url": `/api/maps-for-free/layer/water/z{z}/row{y}/{z}_{x}-{y}.gif`,
+        "id": "river_World_maps_for_free",
+        "label": "maps_for_free_World_river",
+        "name": "river_World_maps_for_free",
+        "url": `/api/maps_for_free/layer/water/z{z}/row{y}/{z}_{x}_{y}.gif`,
         "group": "river",
         "type": "image",
         "serviceType": "xyz",
@@ -520,9 +542,9 @@ const layers = [
     "icon": `light.svg`,
     "children": [
       {
-        "id": "Sentinel-2",
-        "label": "Sentinel-2 夜间灯光",
-        "name": "Sentinel-2",
+        "id": "Sentinel_2",
+        "label": "Sentinel_2 夜间灯光",
+        "name": "Sentinel_2",
         "url": "https://tiles.maps.eox.at/wmts/1.0.0/WMTSCapabilities.xml",
         "group": "light",
         "type": "wmts",
@@ -534,57 +556,79 @@ const layers = [
   //==========================灯光图层结束============================//
   //==========================路网图层开始============================//
   {
-    "id": "road-net",
+    "id": "road_net",
     "label": "路网图层",
     "expanded": false,
-    "icon": `road-net.svg`,
+    "icon": `road_net.svg`,
     "children": [
       {
-        "id": "gaode-road-net-GJC02",
+        "id": "gaode_road_net_GJC02",
         "label": "高德路网标注图(GJC02)",
         "name": "高德路网标注图(GJC02)",
         "url": `https://wprd01.is.autonavi.com/appmaptile?x={x}&y={y}&z={z}&lang=zh_cn&size=1&scl=2&style=8<ype=11`,
-        "group": "road-net",
+        "group": "road_net",
         "type": "road",
         "serviceType": "xyz",
         "visible": false
       },
       {
-        "id": "google-road-net-GJC02",
+        "id": "google_road_net_GJC02",
         "label": "谷歌路网标记图层(GCJ02)",
         "name": "谷歌路网标记图层(GCJ02)",
         "url": `http://mt.google.com/vt?lyrs=h&gl=CN&x={x}&y={y}&z={z}`,
-        "group": "road-net",
+        "group": "road_net",
         "type": "road",
         "serviceType": "xyz",
         "visible": false
       },
       {
-        "id": "OpenRailwayMap-road-net",
+        "id": "OpenRailwayMap_road_net",
         "label": "基于OSM铁路数据的在线PNG底图OpenRailwayMap",
         "name": "OpenRailwayMap",
         "url": `https://a.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png`,
-        "group": "road-net",
+        "group": "road_net",
         "type": "road",
         "serviceType": "xyz",
         "visible": false
       },
       {
-        "id": "OpenRailwayMap-Maxspeed-road-net",
+        "id": "OpenRailwayMap_Maxspeed_road_net",
         "label": "ORM最大速度图 OpenRailwayMap Maxspeed",
         "name": "OpenRailwayMap Maxspeed",
         "url": `https://a.tiles.openrailwaymap.org/maxspeed/{z}/{x}/{y}.png`,
-        "group": "road-net",
+        "group": "road_net",
         "type": "road",
         "serviceType": "xyz",
         "visible": false
       },
       {
-        "id": "road-World_maps-for-free",
-        "label": "road-maps-for-free",
-        "name": "road-World_maps-for-free",
-        "url": `/api/maps-for-free/layer/streets/z{z}/row{y}/{z}_{x}-{y}.gif`,
-        "group": "road-net",
+        "id": "road_World_maps_for_free",
+        "label": "路网_maps_for_free",
+        "name": "road_World_maps_for_free",
+        "url": `/api/maps_for_free/layer/streets/z{z}/row{y}/{z}_{x}_{y}.gif`,
+        "group": "road_net",
+        "type": "road",
+        "serviceType": "xyz",
+        "visible": false,
+        "maxZoom": 18
+      },
+      {
+        "id": "road_esri—light",
+        "label": "路网_白色_esri",
+        "name": "路网_白色_esri",
+        "url": `https://server.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}`,
+        "group": "road_net",
+        "type": "road",
+        "serviceType": "xyz",
+        "visible": false,
+        "maxZoom": 18
+      },
+      {
+        "id": "road_esri—black",
+        "label": "路网_黑色_esri",
+        "name": "路网_黑色_esri",
+        "url": `https://server.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}`,
+        "group": "road_net",
         "type": "road",
         "serviceType": "xyz",
         "visible": false,
@@ -593,6 +637,26 @@ const layers = [
     ]
   },
   //==========================路网图层结束============================//
+  //==========================行政区图层开始============================//
+  //==========================行政区图层开始============================//
+  {
+    "id": "region_esri",
+    "label": "行政区图层",
+    "expanded": false,
+    "icon": `region.svg`,
+    "children": [
+      {
+        "id": "Esri_World_Ocean_Reference",
+        "label": "Esri_World_Ocean_Reference",
+        "name": "Esri_World_Ocean_Reference",
+        "url": `https://server.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Reference/MapServer/tile/{z}/{y}/{x}`,
+        "group": "anotation",
+        "type": "anotation",
+        "serviceType": "xyz",
+        "visible": false
+      },
+    ]
+  },
   //==========================注记图层开始============================//
   {
     "id": "anotation",
@@ -604,22 +668,12 @@ const layers = [
         "id": "tdt_vector_label",
         "label": "天地图矢量注记",
         "name": "tdt_vector_label",
-        "url": `https://t{0-7}.tianditu.gov.cn/DataServer?T=cva_w&x={x}&y={y}&l={z}&tk=${TDT_TOKEN}`,
+        "url": `https://t{0_7}.tianditu.gov.cn/DataServer?T=cva_w&x={x}&y={y}&l={z}&tk=${TDT_TOKEN}`,
         "group": "anotation",
         "type": "anotation",
         "serviceType": "xyz",
         "visible": false
-      },
-      {
-        "id": "World_Ocean_Reference",
-        "label": "World_Ocean_Reference",
-        "name": "World_Ocean_Reference",
-        "url": `https://server.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Reference/MapServer/tile/{z}/{y}/{x}`,
-        "group": "anotation",
-        "type": "anotation",
-        "serviceType": "xyz",
-        "visible": false
-      },
+      }
     ]
   },
   //==========================注记图层结束============================//
@@ -631,7 +685,7 @@ const layers = [
     "icon": `landuse.svg`,
     "children": [
       {
-        "id": "osm-landuse",
+        "id": "osm_landuse",
         "label": "osm土地利用",
         "name": "osm土地利用",
         "url": `https://maps.heigit.org/osmlanduse/service?VERSION=1.3.0&TRANSPARENT=true&QUERY_LAYERS=osmlanduse:osm_lulc&LAYERS=osmlanduse:osm_lulc_combined_osm4eo&BUFFER=0&INFO_FORMAT=application/json&FEATURE_COUNT=1&I=91&J=129&WIDTH=256&HEIGHT=256&CRS=EPSG:3857&STYLES=&BBOX=12836528.782099359,3600489.7803449426,12993071.8160274,3757032.8142729835`,
@@ -641,10 +695,10 @@ const layers = [
         "visible": false
       },
       {
-        "id": "crop__maps-for-free",
+        "id": "crop__maps_for_free",
         "label": "耕地",
-        "name": "crop-World_maps-for-free",
-        "url": `/api/maps-for-free/layer/crop/z{z}/row{y}/{z}_{x}-{y}.gif`,
+        "name": "crop_World_maps_for_free",
+        "url": `/api/maps_for_free/layer/crop/z{z}/row{y}/{z}_{x}_{y}.gif`,
         "group": "landuse",
         "type": "landuse",
         "serviceType": "xyz",
@@ -652,10 +706,10 @@ const layers = [
         "maxZoom": 18
       },
       {
-        "id": "grass_maps-for-free",
+        "id": "grass_maps_for_free",
         "label": "草地",
-        "name": "grass-World_maps-for-free",
-        "url": `/api/maps-for-free/layer/grass/z{z}/row{y}/{z}_{x}-{y}.gif`,
+        "name": "grass_World_maps_for_free",
+        "url": `/api/maps_for_free/layer/grass/z{z}/row{y}/{z}_{x}_{y}.gif`,
         "group": "landuse",
         "type": "landuse",
         "serviceType": "xyz",
@@ -663,10 +717,10 @@ const layers = [
         "maxZoom": 18
       },
       {
-        "id": "forest_maps-for-free",
+        "id": "forest_maps_for_free",
         "label": "林地",
-        "name": "forest-World_maps-for-free",
-        "url": `/api/maps-for-free/layer/forest/z{z}/row{y}/{z}_{x}-{y}.gif`,
+        "name": "forest_World_maps_for_free",
+        "url": `/api/maps_for_free/layer/forest/z{z}/row{y}/{z}_{x}_{y}.gif`,
         "group": "landuse",
         "type": "landuse",
         "serviceType": "xyz",
@@ -674,10 +728,10 @@ const layers = [
         "maxZoom": 18
       },
       {
-        "id": "tundra-maps-for-free",
+        "id": "tundra_maps_for_free",
         "label": "苔原",
-        "name": "tundra-World_maps-for-free",
-        "url": `/api/maps-for-free/layer/tundra/z{z}/row{y}/{z}_{x}-{y}.gif`,
+        "name": "tundra_World_maps_for_free",
+        "url": `/api/maps_for_free/layer/tundra/z{z}/row{y}/{z}_{x}_{y}.gif`,
         "group": "landuse",
         "type": "landuse",
         "serviceType": "xyz",
@@ -685,10 +739,10 @@ const layers = [
         "maxZoom": 18
       },
       {
-        "id": "sand-maps-for-free",
+        "id": "sand_maps_for_free",
         "label": "荒漠|荒原",
-        "name": "sand-World_maps-for-free",
-        "url": `/api/maps-for-free/layer/sand/z{z}/row{y}/{z}_{x}-{y}.gif`,
+        "name": "sand_World_maps_for_free",
+        "url": `/api/maps_for_free/layer/sand/z{z}/row{y}/{z}_{x}_{y}.gif`,
         "group": "landuse",
         "type": "landuse",
         "serviceType": "xyz",
@@ -696,10 +750,10 @@ const layers = [
         "maxZoom": 18
       },
       {
-        "id": "swamp-maps-for-free",
+        "id": "swamp_maps_for_free",
         "label": "沼泽",
-        "name": "swamp-World_maps-for-free",
-        "url": `/api/maps-for-free/layer/swamp/z{z}/row{y}/{z}_{x}-{y}.gif`,
+        "name": "swamp_World_maps_for_free",
+        "url": `/api/maps_for_free/layer/swamp/z{z}/row{y}/{z}_{x}_{y}.gif`,
         "group": "landuse",
         "type": "landuse",
         "serviceType": "xyz",
@@ -707,10 +761,10 @@ const layers = [
         "maxZoom": 18
       },
       {
-        "id": "ice-maps-for-free",
+        "id": "ice_maps_for_free",
         "label": "冰原",
-        "name": "ice-World_maps-for-free",
-        "url": `/api/maps-for-free/layer/ice/z{z}/row{y}/{z}_{x}-{y}.gif`,
+        "name": "ice_World_maps_for_free",
+        "url": `/api/maps_for_free/layer/ice/z{z}/row{y}/{z}_{x}_{y}.gif`,
         "group": "landuse",
         "type": "landuse",
         "serviceType": "xyz",
@@ -722,7 +776,7 @@ const layers = [
   //==========================土地利用图层结束============================//
   //====================Wayback 历史影像图层 (自动生成)================//
   {
-    "id": "Wayback-history",
+    "id": "Wayback_history",
     "label": "Wayback 历史影像图层",
     "expanded": false,
     "icon": `image.svg`,
