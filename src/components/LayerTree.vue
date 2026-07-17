@@ -707,7 +707,7 @@ function onDocumentClick() {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
-.el-tree-node:first-child .node-label-tooltip {
+.el-tree-node__children .el-tree-node:first-child .node-label-tooltip {
   position: absolute;
   bottom: calc(100% - 50px);
   left: 0;
