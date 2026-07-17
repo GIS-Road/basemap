@@ -66,17 +66,7 @@
               <!-- 图标 -->
               <span class="node-icon">
                 <!-- 影像/卫星 -->
-                <img v-if="data.id === 'image'" class="layer-icon" :src="`new URL(${data.icon}, import.meta.url).href`" alt="图标" width="32" height="32">
-            
-                <!-- 地形 -->
-                <svg v-else-if="data.type === 'terrain'" viewBox="0 0 14 14" width="14" height="14">
-                  <polyline points="1,11 4,7 7,9 10,3 13,6" fill="none" stroke="#ffa940" stroke-width="1"
-                    stroke-linejoin="round" />
-                </svg>
-                <!-- 默认 -->
-                <svg v-else viewBox="0 0 14 14" width="14" height="14">
-                  <rect x="2" y="4" width="10" height="7" rx="1" fill="none" stroke="#8ba6cc" stroke-width="0.8" />
-                </svg>
+                <img v-if="data.children" class="layer-icon" :src="getIconUrl(data.icon)" alt="图标" width="20" height="20">
               </span>
 
               <!-- 标签（带截断 + 上方 tooltip） -->
@@ -204,6 +194,18 @@ const activeOpacityId = ref(null)
 const activeOpacityLabel = ref('')
 const activeOpacityValue = ref(1)
 const popupPos = ref({ x: 0, y: 0 })
+
+// 配置svg图标
+const iconModules = import.meta.glob('@/assets/image/layers/*.svg', { eager: true, as: 'url' })
+
+// 获取图标路径的方法
+const getIconUrl = (iconName) => {
+  try {
+    return iconModules[`/src/assets/image/layers/${iconName}`]
+  } catch {
+    return ''
+  }
+}
 
 const treeProps = {
   children: 'children',

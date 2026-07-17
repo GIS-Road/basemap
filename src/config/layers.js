@@ -225,8 +225,18 @@ const layers = [
     "id": "image",
     "label": "影像图层",
     "expanded": true,
-    "icon":`${iconPath}image.svg`,
+    "icon": `image.svg`,
     "children": [
+      {
+        "id": "tianditu_img",
+        "label": "天地图影像",
+        "name": "tianditu_img",
+        "url": `https://t{0-7}.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=${TDT_TOKEN}`,
+        "group": "image",
+        "type": "image",
+        "serviceType": "xyz",
+        "visible": true
+      },
       {
         "id": "geovisearth",
         "label": "星图地球-影像",
@@ -246,16 +256,6 @@ const layers = [
         "type": "image",
         "serviceType": "xyz",
         "visible": false
-      },
-      {
-        "id": "tianditu_img",
-        "label": "天地图影像",
-        "name": "tianditu_img",
-        "url": `https://t{0-7}.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=${TDT_TOKEN}`,
-        "group": "image",
-        "type": "image",
-        "serviceType": "xyz",
-        "visible": true
       },
       {
         "id": "bing-image",
@@ -305,8 +305,18 @@ const layers = [
     "id": "vector",
     "label": "矢量图层",
     "expanded": true,
-    "icon":`${iconPath}vector.svg`,
+    "icon": `vector.svg`,
     "children": [
+      {
+        "id": "tdt_vector",
+        "label": "天地图矢量",
+        "name": "tianditu_vec",
+        "url": `https://t{0-7}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}&tk=${TDT_TOKEN}`,
+        "group": "vector",
+        "type": "vector",
+        "serviceType": "xyz",
+        "visible": false
+      },
       {
         "id": "esri-USA_Topo_Maps",
         "label": "USA Topo Maps",
@@ -322,16 +332,6 @@ const layers = [
         "label": "World_Topo_Map",
         "name": "World_Topo_Map",
         "url": "https://server.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
-        "group": "vector",
-        "type": "vector",
-        "serviceType": "xyz",
-        "visible": false
-      },
-      {
-        "id": "tdt_vector",
-        "label": "天地图矢量",
-        "name": "tianditu_vec",
-        "url": `https://t{0-7}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}&tk=${TDT_TOKEN}`,
         "group": "vector",
         "type": "vector",
         "serviceType": "xyz",
@@ -385,7 +385,7 @@ const layers = [
     "id": "river",
     "label": "水系图层",
     "expanded": false,
-    "icon":`${iconPath}river.svg`,
+    "icon": `river.svg`,
     "children": [
       {
         "id": "tencent-river",
@@ -405,7 +405,7 @@ const layers = [
     "id": "light",
     "label": "灯光图层",
     "expanded": false,
-    "icon":`${iconPath}light.svg`,
+    "icon": `light.svg`,
     "children": [
       {
         "id": "Sentinel-2",
@@ -425,7 +425,7 @@ const layers = [
     "id": "terrain",
     "label": "地形图层",
     "expanded": true,
-    "icon":`${iconPath}terrain.svg`,
+    "icon": `terrain.svg`,
     "children": [
       {
         "id": "terrain-World_maps-for-free",
@@ -525,7 +525,7 @@ const layers = [
     "id": "road-net",
     "label": "路网图层",
     "expanded": false,
-    "icon":`${iconPath}road-net.svg`,
+    "icon": `road-net.svg`,
     "children": [
       {
         "id": "gaode-road-net-GJC02",
@@ -575,7 +575,7 @@ const layers = [
     "id": "anotation",
     "label": "注记图层",
     "expanded": true,
-    "icon":`${iconPath}anotation.svg`,
+    "icon": `anotation.svg`,
     "children": [
       {
         "id": "tdt_vector_label",
@@ -605,7 +605,7 @@ const layers = [
     "id": "landuse",
     "label": "土地利用图层",
     "expanded": false,
-    "icon":`${iconPath}landuse.svg`,
+    "icon": `landuse.svg`,
     "children": [
       {
         "id": "osm-landuse",
@@ -625,7 +625,7 @@ const layers = [
     "id": "Wayback-history",
     "label": "Wayback 历史影像图层",
     "expanded": false,
-    "icon":`${iconPath}image.svg`,
+    "icon": `image.svg`,
     "children": [
       ...waybackLayerConfigs,
     ]
