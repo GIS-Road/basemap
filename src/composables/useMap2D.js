@@ -65,6 +65,22 @@ const BASE_MAP_SOURCES = {
   })
 }
 
+// ====================== Bing Maps quadkey 转换 ======================
+// Bing 瓦片使用 quadkey（四叉键）寻址，每位编码 0/1/2/3 = 左上/右上/左下/右下
+// OL 的 ol/source/XYZ 原生仅替换 {z}{x}{y}{-y}，不识别 {q}，故需手动转换
+// Bing 与 Google/OSM 同为 Web Mercator + 左上角原点，y 无需翻转
+function tileXYToQuadKey(x, y, z) {
+  let quadKey = ''
+  for (let i = z; i > 0; i--) {
+    let digit = 0
+    const mask = 1 << (i - 1)
+    if ((x & mask) !== 0) digit++
+    if ((y & mask) !== 0) digit += 2
+    quadKey += digit
+  }
+  return quadKey
+}
+
 export function useMap2D() {
   const mapInstance = ref(null)
 
@@ -206,14 +222,53 @@ export function useMap2D() {
    * @param {ol/Map} map
    * @param {string} layerId
    * @param {string} url - XYZ 瓦片 URL 模板
+   * @param {string} [serviceType='xyz'] - 图层服务类型，支持 xyz / osm
    */
-  function createOverlayAndAddToTop(map, layerId, url) {
+  function createOverlayAndAddToTop(map, layerId, url, serviceType = 'xyz') {
     if (!url) return
-    const layer = new TileLayer({
-      source: new XYZ({
+    let source
+    if (serviceType === 'osm') {
+      source = new OSM({
+        url,
+        opaque: true,
+        crossOrigin: 'anonymous'
+      })
+    } else if (serviceType === 'xyz') {
+      // source = new XYZ({
+      //   opaque: true,
+      //   url,
+      //   crossOrigin: 'anonymous'
+      // })
+      source = new OSM({
+        url,
+        opaque: true,
+        crossOrigin: 'anonymous'
+      })
+    } else if (url.includes('{q}')) {
+      // Bing Maps quadkey 寻址：{q} 不被 OL 原生支持，用 tileUrlFunction 转换
+      source = new XYZ({
+        crossOrigin: 'anonymous',
+        tileUrlFunction: (tileCoord) => {
+          const [z, x, y] = tileCoord
+          if (z == null || x == null || y == null) return undefined
+          const quadKey = tileXYToQuadKey(x, y, z)
+          let finalUrl = url.replace(/\{q\}/g, quadKey)
+          // 子域名轮换：{0-3} / {0-7} 等，按 (x+y+z) hash 分担请求
+          finalUrl = finalUrl.replace(/\{(\d+)-(\d+)\}/g, (m, min, max) => {
+            const lo = Number(min), hi = Number(max)
+            return String(lo + ((x + y + z) % (hi - lo + 1)))
+          })
+          return finalUrl
+        }
+      })
+    } else {
+      source = new XYZ({
         url,
         crossOrigin: 'anonymous'
-      }),
+      })
+    }
+    const layer = new TileLayer({
+      source,
       visible: true,
       properties: { layerId }
     })

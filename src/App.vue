@@ -245,6 +245,8 @@ async function init2DMap() {
     baseMap: mapStore.activeBaseMap
   })
 
+  syncLayersToMap(map2d)
+
   // 监听视角变化（仅存 store 中心/缩放，不再显示中心坐标）
   map2d.on('moveend', () => {
     const center = getCenter(map2d)
@@ -358,35 +360,34 @@ function handleModeChange(mode) {
 
 // ==================== 图层可见性与地图联动 ====================
 
-// 监听图层树变化，同步到地图图层显隐 + 层级顺序 + 透明度
-watch(() => mapStore.layerTree, () => {
-  if (!map2d) return
+function syncLayersToMap(map) {
+  if (!map) return
   const traverse = (nodes) => {
     for (const node of nodes) {
       if (node.type !== 'group' && node.visible !== undefined) {
         // 预加载底图（type=base 或 tianditu_img）：通过可见性控制
         if (node.type === 'base' || node.id.startsWith('tianditu')) {
-          setLayerVisible(map2d, node.id, node.visible)
+          setLayerVisible(map, node.id, node.visible)
         } else {
           // 非底图图层（overlay / terrain 等）：动态添加/移除
           if (node.visible) {
             // 仅在图层未加载时才添加，避免影响其他已加载图层
             if (!hasDynamicLayer(node.id)) {
               if (node.serviceType === 'wmts') {
-                createWmtsOverlayAndAddToTop(map2d, node.id, node.url, { layerName: node.name })
+                createWmtsOverlayAndAddToTop(map, node.id, node.url, { layerName: node.name })
               } else {
-                createOverlayAndAddToTop(map2d, node.id, node.url)
+                createOverlayAndAddToTop(map, node.id, node.url, node.serviceType)
               }
             }
           } else {
             // 仅在图层已加载时才移除
             if (hasDynamicLayer(node.id)) {
-              removeDynamicLayer(map2d, node.id)
+              removeDynamicLayer(map, node.id)
             }
           }
         }
         // 应用图层透明度
-        setLayerOpacity(map2d, node.id, node.opacity ?? 1)
+        setLayerOpacity(map, node.id, node.opacity ?? 1)
       }
       if (node.children) traverse(node.children)
     }
@@ -394,7 +395,12 @@ watch(() => mapStore.layerTree, () => {
   traverse(mapStore.layerTree)
 
   // 同步图层 z-index 顺序：越靠上 zIndex 越小（离用户越远），越靠下 zIndex 越大（离用户越近）
-  syncLayerOrder(map2d, mapStore.layerTree)
+  syncLayerOrder(map, mapStore.layerTree)
+}
+
+// 监听图层树变化，同步到地图图层显隐 + 层级顺序 + 透明度
+watch(() => mapStore.layerTree, () => {
+  syncLayersToMap(map2d)
 }, { deep: true })
 
 // ==================== 生命周期 ====================

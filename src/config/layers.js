@@ -261,7 +261,7 @@ const layers = [
         "id": "bing-image",
         "label": "影像_Bing",
         "name": "影像_Bing",
-        "url": `http://ecn.t3.tiles.virtualearth.net/tiles/a{q}.ipeg?g=0&dir=dir n'`,
+        "url": "http://ecn.t{0-3}.tiles.virtualearth.net/tiles/a{q}.jpeg?g=7786",
         "group": "image",
         "type": "image",
         "serviceType": "xyz",
@@ -429,13 +429,13 @@ const layers = [
     "children": [
       {
         "id": "terrain-World_maps-for-free",
-        "label": "地形 World_maps-for-free",
+        "label": "maps-for-free-World-Terrain 地形",
         "name": "World_maps-for-free",
-        "url": `https://maps-for-free.com/layer/relief/z{level}/row{row}/{level}_{col}-{row}.jpg`,
+        "url": `https://maps-for-free.com/layer/relief/z{z}/row{y}/{z}_{x}-{y}.jpg`,
         "group": "terrain",
         "type": "terrain",
         "serviceType": "xyz",
-        "visible": false
+        "visible": true
       },
       {
         "id": "terrain-World_Ocean_Base",
