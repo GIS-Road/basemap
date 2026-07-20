@@ -236,14 +236,9 @@ export function useMap2D() {
         crossOrigin: 'anonymous'
       })
     } else if (serviceType === 'xyz') {
-      // source = new XYZ({
-      //   opaque: true,
-      //   url,
-      //   crossOrigin: 'anonymous'
-      // })
-      source = new OSM({
-        url,
+      source = new XYZ({
         opaque: true,
+        url,
         crossOrigin: 'anonymous'
       })
     } else if (url.includes('{q}')) {
