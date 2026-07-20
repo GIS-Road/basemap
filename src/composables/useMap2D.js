@@ -223,8 +223,10 @@ export function useMap2D() {
    * @param {string} layerId
    * @param {string} url - XYZ 瓦片 URL 模板
    * @param {string} [serviceType='xyz'] - 图层服务类型，支持 xyz / osm
+   * @param {Object} [options={}] - 额外选项
+   * @param {number} [options.zoom] - 最小显示缩放级别（minZoom），低于此级别图层不显示
    */
-  function createOverlayAndAddToTop(map, layerId, url, serviceType = 'xyz') {
+  function createOverlayAndAddToTop(map, layerId, url, serviceType = 'xyz', options = {}) {
     if (!url) return
     let source
     if (serviceType === 'osm') {
@@ -270,6 +272,7 @@ export function useMap2D() {
     const layer = new TileLayer({
       source,
       visible: true,
+      minZoom: options.zoom || 0,
       properties: { layerId }
     })
     addLayerToTop(map, layerId, layer)
@@ -289,6 +292,7 @@ export function useMap2D() {
    * @param {Object} [options] - 覆盖选项
    * @param {string} [options.layerName] - 图层名（不传则用 capabilities 中第一个图层）
    * @param {string} [options.matrixSet] - 矩阵集名（不传则自动选择 EPSG:3857 兼容项）
+   * @param {number} [options.zoom] - 最小显示缩放级别（minZoom），低于此级别图层不显示
    */
   async function createWmtsOverlayAndAddToTop(map, layerId, capabilitiesUrl, options = {}) {
     if (!capabilitiesUrl) return
@@ -296,14 +300,14 @@ export function useMap2D() {
     if (dynamicLayers.has(layerId)) return
 
     try {
-      // 优先使用缓存的 Capabilities 对象（Wayback 等 195 个图层共享同一 URL）
+      // 优先使用缓存的 Capabilities 对象（同一 URL 的多个图层共享）
       let caps = wmtsCapsCache.get(capabilitiesUrl)
       if (!caps) {
         const response = await fetch(capabilitiesUrl)
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
         let xmlText = await response.text()
 
-        // 部分 WMTS 服务（如 ESRI Wayback）的 XML 使用 https:// 命名空间，
+        // 部分 WMTS 服务的 XML 使用 https:// 命名空间，
         // 而 OpenLayers 的 WMTSCapabilities 解析器仅识别 http:// 命名空间，
         // 导致 Contents/TileMatrixSet 等节点无法匹配。此处做命名空间归一化。
         xmlText = xmlText.replace(/https:\/\/www\.opengis\.net/g, 'http://www.opengis.net')
@@ -362,6 +366,7 @@ export function useMap2D() {
       const layer = new TileLayer({
         source,
         visible: true,
+        minZoom: options.zoom || 0,
         properties: { layerId }
       })
 

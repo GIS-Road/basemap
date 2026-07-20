@@ -374,9 +374,9 @@ function syncLayersToMap(map) {
             // 仅在图层未加载时才添加，避免影响其他已加载图层
             if (!hasDynamicLayer(node.id)) {
               if (node.serviceType === 'wmts') {
-                createWmtsOverlayAndAddToTop(map, node.id, node.url, { layerName: node.name })
+                createWmtsOverlayAndAddToTop(map, node.id, node.url, { layerName: node.name, zoom: node.zoom })
               } else {
-                createOverlayAndAddToTop(map, node.id, node.url, node.serviceType)
+                createOverlayAndAddToTop(map, node.id, node.url, node.serviceType, { zoom: node.zoom })
               }
             }
           } else {

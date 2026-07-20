@@ -3,10 +3,12 @@ const TDT_TOKEN = "fa7ec9766b2c00747e3dd60ab3d05892"
 // 星图token
 const GEOVISEARTH = "15d2ddab335383b5d485b78a3e04ac9f92683ee2e3b04cdf862cb292168674e7"
 
-// ESRI Wayback 历史影像 WMTS 服务地址
-const WAYBACK_WMTS_URL = "https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/WMTS/1.0.0/WMTSCapabilities.xml"
+// ESRI Wayback 历史影像 XYZ 瓦片服务基础地址
+// 每个 Wayback 版本通过 releaseId（如 WB_2026_R06）区分
+// 完整 URL: {base}/{releaseId}/default028mm/MapServer/tile/{z}/{y}/{x}
+const WAYBACK_TILE_BASE = "https://wayback-b.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0"
 
-// ESRI Wayback 历史影像图层列表 (从 WMTS Capabilities 自动提取)
+// ESRI Wayback 历史影像图层列表
 // 共 195 个图层，时间跨度: 2014_02_20 ~ 2026_06_30
 const WAYBACK_LAYERS = [
   { id: "WB_2026_R06", date: "2026-06-30" },
@@ -207,14 +209,15 @@ const WAYBACK_LAYERS = [
 ]
 
 // 从 WAYBACK_LAYERS 生成图层配置对象
+// 每个版本使用独立的 XYZ 瓦片 URL，通过 releaseId 区分不同历史影像
 const waybackLayerConfigs = WAYBACK_LAYERS.map(wb => ({
   id: `wayback_${wb.id}`,
   label: `Wayback ${wb.date}`,
   name: wb.id,
-  url: WAYBACK_WMTS_URL,
+  url: `${WAYBACK_TILE_BASE}/${wb.id}/default028mm/MapServer/tile/{z}/{y}/{x}`,
   group: "wayback",
   type: "image",
-  serviceType: "wmts",
+  serviceType: "xyz",
   visible: false
 }))
 
@@ -236,7 +239,7 @@ const layers = [
         "type": "terrain",
         "serviceType": "xyz",
         "visible": false,
-        "maxZoom": 18
+        "zoom": 10
       },
       {
         "id": "relief_esri—black",
@@ -247,7 +250,7 @@ const layers = [
         "type": "terrain",
         "serviceType": "xyz",
         "visible": false,
-        "maxZoom": 18
+        "zoom": ""
       },
       {
         "id": "terrain_World_maps_for_free",
@@ -258,7 +261,7 @@ const layers = [
         "type": "terrain",
         "serviceType": "xyz",
         "visible": false,
-        "maxZoom": 18
+        "zoom": 14
       },
       {
         "id": "terrain_World_Ocean_Base",
@@ -268,7 +271,8 @@ const layers = [
         "group": "terrain",
         "type": "terrain",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": 14
       },
       {
         "id": "terrain_EMODnet",
@@ -278,7 +282,8 @@ const layers = [
         "group": "terrain",
         "type": "terrain",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": 14
       },
       {
         "id": "terrain_Esri_Topography",
@@ -288,7 +293,8 @@ const layers = [
         "group": "terrain",
         "type": "terrain",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": 14
       },
       {
         "id": "terrain_Esri_Shaded_Relief",
@@ -298,7 +304,8 @@ const layers = [
         "group": "terrain",
         "type": "terrain",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": 14
       },
       {
         "id": "terrain_Esri_World_Physical_Map",
@@ -308,7 +315,8 @@ const layers = [
         "group": "terrain",
         "type": "terrain",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": 14
       },
       {
         "id": "terrain_World_Terrain_Base",
@@ -318,7 +326,8 @@ const layers = [
         "group": "terrain",
         "type": "terrain",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": 14
       },
       {
         "id": "terrain_google_pure_landuse",
@@ -328,7 +337,8 @@ const layers = [
         "group": "terrain",
         "type": "terrain",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": ""
       },
       {
         "id": "terrain_google_pure_gray",
@@ -338,7 +348,8 @@ const layers = [
         "group": "terrain",
         "type": "terrain",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": ""
       },
     ]
   },
@@ -358,7 +369,8 @@ const layers = [
         "group": "image",
         "type": "image",
         "serviceType": "xyz",
-        "visible": true
+        "visible": true,
+        "zoom": ""
       },
       {
         "id": "geovisearth",
@@ -368,7 +380,8 @@ const layers = [
         "group": "image",
         "type": "image",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": ""
       },
       {
         "id": "esri_World_Imagery",
@@ -378,7 +391,8 @@ const layers = [
         "group": "image",
         "type": "image",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": ""
       },
       {
         "id": "gaode_image",
@@ -388,7 +402,8 @@ const layers = [
         "group": "image",
         "type": "image",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": ""
       },
       {
         "id": "bing_image",
@@ -398,7 +413,8 @@ const layers = [
         "group": "image",
         "type": "image",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": ""
       },
       {
         "id": "google_origin_image",
@@ -408,7 +424,8 @@ const layers = [
         "group": "image",
         "type": "image",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": ""
       },
       {
         "id": "google_image_hybrid",
@@ -418,7 +435,8 @@ const layers = [
         "group": "image",
         "type": "image",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": ""
       },
     ]
   },
@@ -438,7 +456,8 @@ const layers = [
         "group": "vector",
         "type": "vector",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": ""
       },
       {
         "id": "esri_USA_Topo_Maps",
@@ -448,7 +467,8 @@ const layers = [
         "group": "vector",
         "type": "vector",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": ""
       },
       {
         "id": "esri_World_Topo_Map",
@@ -458,7 +478,8 @@ const layers = [
         "group": "vector",
         "type": "vector",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": 14
       },
       {
         "id": "osm_vector",
@@ -468,7 +489,8 @@ const layers = [
         "group": "vector",
         "type": "vector",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": ""
       },
       {
         "id": "Open_Topo_Map_vector",
@@ -478,7 +500,8 @@ const layers = [
         "group": "vector",
         "type": "vector",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": ""
       },
       {
         "id": "OpenStreetMap_vector",
@@ -488,7 +511,8 @@ const layers = [
         "group": "vector",
         "type": "vector",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": ""
       },
       {
         "id": "Bing电子地图_vector",
@@ -498,7 +522,8 @@ const layers = [
         "group": "vector",
         "type": "vector",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": ""
       },
     ]
   },
@@ -518,7 +543,8 @@ const layers = [
         "group": "river",
         "type": "image",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": ""
       },
       {
         "id": "river_World_maps_for_free",
@@ -529,7 +555,7 @@ const layers = [
         "type": "image",
         "serviceType": "xyz",
         "visible": false,
-        "maxZoom": 18
+        "zoom": ""
       },
     ]
   },
@@ -549,7 +575,8 @@ const layers = [
         "group": "light",
         "type": "wmts",
         "serviceType": "wmts",
-        "visible": false
+        "visible": false,
+        "zoom": ""
       },
     ]
   },
@@ -569,7 +596,8 @@ const layers = [
         "group": "road_net",
         "type": "road",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": ""
       },
       {
         "id": "google_road_net_GJC02",
@@ -579,7 +607,8 @@ const layers = [
         "group": "road_net",
         "type": "road",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": ""
       },
       {
         "id": "OpenRailwayMap_road_net",
@@ -589,7 +618,8 @@ const layers = [
         "group": "road_net",
         "type": "road",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": ""
       },
       {
         "id": "OpenRailwayMap_Maxspeed_road_net",
@@ -599,7 +629,8 @@ const layers = [
         "group": "road_net",
         "type": "road",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": ""
       },
       {
         "id": "road_World_maps_for_free",
@@ -610,7 +641,7 @@ const layers = [
         "type": "road",
         "serviceType": "xyz",
         "visible": false,
-        "maxZoom": 18
+        "zoom": ""
       },
       {
         "id": "road_esri—light",
@@ -621,7 +652,7 @@ const layers = [
         "type": "road",
         "serviceType": "xyz",
         "visible": false,
-        "maxZoom": 18
+        "zoom": ""
       },
       {
         "id": "road_esri—black",
@@ -632,7 +663,7 @@ const layers = [
         "type": "road",
         "serviceType": "xyz",
         "visible": false,
-        "maxZoom": 18
+        "zoom": ""
       },
     ]
   },
@@ -653,7 +684,8 @@ const layers = [
         "group": "anotation",
         "type": "anotation",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": 12
       },
     ]
   },
@@ -672,7 +704,8 @@ const layers = [
         "group": "anotation",
         "type": "anotation",
         "serviceType": "xyz",
-        "visible": false
+        "visible": false,
+        "zoom": ""
       }
     ]
   },
@@ -692,7 +725,8 @@ const layers = [
         "group": "landuse",
         "type": "landuse",
         "serviceType": "wmts",
-        "visible": false
+        "visible": false,
+        "zoom": ""
       },
       {
         "id": "crop__maps_for_free",
@@ -703,7 +737,7 @@ const layers = [
         "type": "landuse",
         "serviceType": "xyz",
         "visible": false,
-        "maxZoom": 18
+        "zoom": ""
       },
       {
         "id": "grass_maps_for_free",
@@ -714,7 +748,7 @@ const layers = [
         "type": "landuse",
         "serviceType": "xyz",
         "visible": false,
-        "maxZoom": 18
+        "zoom": ""
       },
       {
         "id": "forest_maps_for_free",
@@ -725,7 +759,7 @@ const layers = [
         "type": "landuse",
         "serviceType": "xyz",
         "visible": false,
-        "maxZoom": 18
+        "zoom": ""
       },
       {
         "id": "tundra_maps_for_free",
@@ -736,7 +770,7 @@ const layers = [
         "type": "landuse",
         "serviceType": "xyz",
         "visible": false,
-        "maxZoom": 18
+        "zoom": ""
       },
       {
         "id": "sand_maps_for_free",
@@ -747,7 +781,7 @@ const layers = [
         "type": "landuse",
         "serviceType": "xyz",
         "visible": false,
-        "maxZoom": 18
+        "zoom": ""
       },
       {
         "id": "swamp_maps_for_free",
@@ -758,7 +792,7 @@ const layers = [
         "type": "landuse",
         "serviceType": "xyz",
         "visible": false,
-        "maxZoom": 18
+        "zoom": ""
       },
       {
         "id": "ice_maps_for_free",
@@ -769,7 +803,7 @@ const layers = [
         "type": "landuse",
         "serviceType": "xyz",
         "visible": false,
-        "maxZoom": 18
+        "zoom": ""
       },
     ]
   },

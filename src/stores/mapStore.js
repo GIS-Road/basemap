@@ -22,7 +22,8 @@ function buildLayerTree(config) {
       type: l.type,
       serviceType: l.serviceType,
       visible: l.visible,
-      opacity: l.opacity !== undefined ? l.opacity : 1
+      opacity: l.opacity !== undefined ? l.opacity : 1,
+      zoom: l.zoom !== undefined ? l.zoom : 0
     }))
   }))
 }

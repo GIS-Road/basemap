@@ -82,6 +82,7 @@ npm run build
 微信公众号：**GIS之路**
 
 个人微信：`shanhaigis`
+
 ![alt text](src/assets/image/公众号联系方式.png)
 
 
