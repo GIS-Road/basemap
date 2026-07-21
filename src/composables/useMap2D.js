@@ -258,6 +258,17 @@ export function useMap2D() {
           return finalUrl
         }
       })
+    } else if (serviceType === 'maps-for-free-terrain') {
+      source = new OSM({
+        url,
+        crossOrigin: 'anonymous'
+      })
+    } else if (serviceType === 'maps-for-free-landuse') {
+      source = new OSM({
+        url,
+        opaque: true,
+        crossOrigin: 'anonymous'
+      })
     } else {
       source = new XYZ({
         url,

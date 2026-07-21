@@ -270,9 +270,9 @@ const layers = [
         "url": `/maps-for-free/layer/relief/z{z}/row{y}/{z}_{x}-{y}.jpg`,
         "group": "terrain",
         "type": "terrain",
-        "serviceType": "osm",
+        "serviceType": "maps-for-free-terrain",
         "visible": false,
-        "zoom": 14
+        "zoom": ""
       },
       {
         "id": "terrain_World_Ocean_Base",
@@ -354,7 +354,7 @@ const layers = [
       {
         "id": "terrain_google_pure_gray",
         "label": "谷歌地形图_纯图_灰色",
-        "name": "Eris World_Terrain_Base",
+        "name": "谷歌地形图_纯图_灰色",
         "url": `http://www.google.com/maps/vt/pb=!1m4!1m3!1i{z}!2i{x}!3i{y}!2m1!1e5`,
         "group": "terrain",
         "type": "terrain",
@@ -746,7 +746,7 @@ const layers = [
         "url": `/maps-for-free/layer/crop/z{z}/row{y}/{z}_{x}-{y}.gif`,
         "group": "landuse",
         "type": "landuse",
-        "serviceType": "osm",
+        "serviceType": "maps-for-free-landuse",
         "visible": false,
         "zoom": ""
       },
@@ -757,7 +757,7 @@ const layers = [
         "url": `/maps-for-free/layer/grass/z{z}/row{y}/{z}_{x}-{y}.gif`,
         "group": "landuse",
         "type": "landuse",
-        "serviceType": "osm",
+        "serviceType": "maps-for-free",
         "visible": false,
         "zoom": ""
       },
@@ -768,7 +768,7 @@ const layers = [
         "url": `/maps-for-free/layer/forest/z{z}/row{y}/{z}_{x}-{y}.gif`,
         "group": "landuse",
         "type": "landuse",
-        "serviceType": "osm",
+        "serviceType": "maps-for-free-landuse",
         "visible": false,
         "zoom": ""
       },
@@ -779,7 +779,7 @@ const layers = [
         "url": `/maps-for-free/layer/tundra/z{z}/row{y}/{z}_{x}-{y}.gif`,
         "group": "landuse",
         "type": "landuse",
-        "serviceType": "osm",
+        "serviceType": "maps-for-free-landuse",
         "visible": false,
         "zoom": ""
       },
@@ -790,7 +790,7 @@ const layers = [
         "url": `/maps-for-free/layer/sand/z{z}/row{y}/{z}_{x}-{y}.gif`,
         "group": "landuse",
         "type": "landuse",
-        "serviceType": "osm",
+        "serviceType": "maps-for-free-landuse",
         "visible": false,
         "zoom": ""
       },
@@ -801,7 +801,7 @@ const layers = [
         "url": `/maps-for-free/layer/swamp/z{z}/row{y}/{z}_{x}-{y}.gif`,
         "group": "landuse",
         "type": "landuse",
-        "serviceType": "osm",
+        "serviceType": "maps-for-free-landuse",
         "visible": false,
         "zoom": ""
       },
@@ -812,7 +812,7 @@ const layers = [
         "url": `/maps-for-free/layer/ice/z{z}/row{y}/{z}_{x}-{y}.gif`,
         "group": "landuse",
         "type": "landuse",
-        "serviceType": "osm",
+        "serviceType": "maps-for-free-landuse",
         "visible": false,
         "zoom": ""
       },
