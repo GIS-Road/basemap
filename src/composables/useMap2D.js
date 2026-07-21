@@ -10,6 +10,7 @@ import Projection from 'ol/proj/Projection'
 import { addProjection, addCoordinateTransforms, getTransform, fromLonLat, toLonLat } from 'ol/proj'
 import Zoom from 'ol/control/Zoom'
 import Attribution from 'ol/control/Attribution'
+import { tr } from 'element-plus/es/locales.mjs'
 
 // ====================== 注册 EPSG:4490 坐标系 (CGCS2000) ======================
 // 无需外部 proj4 库，通过坐标变换链实现 EPSG:4490 ↔ EPSG:4326 ↔ EPSG:3857
@@ -101,7 +102,8 @@ export function useMap2D() {
       view: new View({
         center: fromLonLat(center),  // EPSG:4326 → EPSG:3857
         zoom,
-        projection: 'EPSG:3857'
+        projection: 'EPSG:3857',
+        multiWorld: false
       }),
       controls: [
         new Zoom(),
