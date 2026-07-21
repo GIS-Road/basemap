@@ -283,8 +283,8 @@ export function useMap2D() {
       // minZoom: options.zoom || 0,
       properties: { layerId }
     })
-    map.addLayer(layer)
-    // addLayerToTop(map, layerId, layer)
+    // map.addLayer(layer)
+    addLayerToTop(map, layerId, layer)
   }
 
   /**
