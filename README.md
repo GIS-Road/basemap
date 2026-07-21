@@ -43,7 +43,7 @@ basemap/
     │   └── mapStore.js           # Pinia 状态管理（地图模式/底图/中心/缩放/图层树/绘制状态）
     │
     └── config/
-        └── layers.json           # 图层配置（底图分组 + 叠加图层分组）
+        └── layers.js             # 图层配置
 ```
 ## 项目效果
 ![alt text](<src/assets/效果图/image (1).png>) 
