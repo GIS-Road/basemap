@@ -12,11 +12,14 @@ export default defineConfig({
     port: 3000,
     host: true,
     proxy: {
-      '/api/maps-for-free': {
+      '/maps-for-free': {
         target: 'https://maps-for-free.com',
         changeOrigin: true,
         secure: true,
-        rewrite: (path) => path.replace(/^\/api\/maps-for-free/, '')
+        rewrite: (path) => path.replace(/^\/maps-for-free/, ''),
+        headers: {
+          'Referer': 'https://maps-for-free.com/'
+        }
       }
     }
   },
