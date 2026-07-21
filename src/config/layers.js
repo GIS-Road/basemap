@@ -239,7 +239,7 @@ const layers = [
         "type": "terrain",
         "serviceType": "xyz",
         "visible": false,
-        "zoom": 10
+        "zoom": ""
       },
       {
         "id": "relief_esri—black",
@@ -265,7 +265,7 @@ const layers = [
       },
       {
         "id": "terrain_World_maps-for-free",
-        "label": "maps-for-free_World_Terrain 地形",
+        "label": "地形_maps-for-free",
         "name": "World_maps-for-free",
         "url": `/maps-for-free/layer/relief/z{z}/row{y}/{z}_{x}-{y}.jpg`,
         "group": "terrain",
@@ -276,69 +276,69 @@ const layers = [
       },
       {
         "id": "terrain_World_Ocean_Base",
-        "label": "地形_World_Ocean_Base",
-        "name": "地形_World_Ocean_Base",
+        "label": "Esri_World_Ocean_Base",
+        "name": "Esri_World_Ocean_Base",
         "url": `https://server.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}`,
         "group": "terrain",
         "type": "terrain",
         "serviceType": "xyz",
         "visible": false,
-        "zoom": 14
-      },
-      {
-        "id": "terrain_EMODnet",
-        "label": "地形_欧洲海洋观测EMODnet",
-        "name": "地形_欧洲海洋观测EMODnet",
-        "url": `https://tiles.emodnet_bathymetry.eu/2020/baselayer/web_mercator/{z}/{x}/{y}.png`,
-        "group": "terrain",
-        "type": "terrain",
-        "serviceType": "xyz",
-        "visible": false,
-        "zoom": 14
+        "zoom": ""
       },
       {
         "id": "terrain_Esri_Topography",
-        "label": "Esri Topography Map地形底图",
-        "name": "Esri Topography Map地形底图",
-        "url": `http://server.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}`,
+        "label": "Esri_World_Topo_Map",
+        "name": "Esri_World_Topo_Map",
+        "url": `https://server.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}`,
         "group": "terrain",
         "type": "terrain",
         "serviceType": "xyz",
         "visible": false,
-        "zoom": 14
+        "zoom": ""
       },
       {
         "id": "terrain_Esri_Shaded_Relief",
-        "label": "Eris Shaded Relief 地形",
-        "name": "Eris Shaded Relief 地形",
+        "label": "Esri_Shaded_Relief",
+        "name": "Esri_Shaded_Relief",
         "url": `https://server.arcgisonline.com/arcgis/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}`,
         "group": "terrain",
         "type": "terrain",
         "serviceType": "xyz",
         "visible": false,
-        "zoom": 14
+        "zoom": ""
       },
       {
         "id": "terrain_Esri_World_Physical_Map",
-        "label": "Eris World_Physical_Map",
-        "name": "Eris World_Physical_Map",
+        "label": "Esri_World_Physical_Map",
+        "name": "Esri_World_Physical_Map",
         "url": `https://server.arcgisonline.com/arcgis/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}`,
         "group": "terrain",
         "type": "terrain",
         "serviceType": "xyz",
         "visible": false,
-        "zoom": 14
+        "zoom": ""
       },
       {
         "id": "terrain_World_Terrain_Base",
-        "label": "Eris World_Terrain_Base",
-        "name": "Eris World_Terrain_Base",
+        "label": "Esri_World_Terrain_Base",
+        "name": "Esri_World_Terrain_Base",
         "url": `https://server.arcgisonline.com/arcgis/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}`,
         "group": "terrain",
         "type": "terrain",
         "serviceType": "xyz",
         "visible": false,
-        "zoom": 14
+        "zoom": ""
+      },
+      {
+        "id": "terrain_EMODnet",
+        "label": "欧洲海洋观测EMODnet",
+        "name": "欧洲海洋观测EMODnet",
+        "url": `https://tiles.emodnet_bathymetry.eu/2020/baselayer/web_mercator/{z}/{x}/{y}.png`,
+        "group": "terrain",
+        "type": "terrain",
+        "serviceType": "xyz",
+        "visible": false,
+        "zoom": ""
       },
       {
         "id": "terrain_google_pure_landuse",
@@ -396,8 +396,8 @@ const layers = [
       },
       {
         "id": "esri_World_Imagery",
-        "label": "ArcGIS 卫星图_World_Imagery",
-        "name": "World_Imagery",
+        "label": "Esri_World_Imagery_卫星图",
+        "name": "Esri_World_Imagery_卫星图",
         "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
         "group": "image",
         "type": "image",
@@ -471,9 +471,9 @@ const layers = [
         "zoom": ""
       },
       {
-        "id": "esri_USA_Topo_Maps",
-        "label": "USA Topo Maps",
-        "name": "USA Topo Maps",
+        "id": "Esri_USA_Topo_Maps",
+        "label": "USA_Topo_Maps",
+        "name": "USA_Topo_Maps",
         "url": "https://server.arcgisonline.com/arcgis/rest/services/USA_Topo_Maps/MapServer/tile/{z}/{y}/{x}",
         "group": "vector",
         "type": "vector",
@@ -482,7 +482,7 @@ const layers = [
         "zoom": ""
       },
       {
-        "id": "esri_World_Topo_Map",
+        "id": "Esri_World_Topo_Map",
         "label": "World_Topo_Map",
         "name": "World_Topo_Map",
         "url": "https://server.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
@@ -490,7 +490,7 @@ const layers = [
         "type": "vector",
         "serviceType": "xyz",
         "visible": false,
-        "zoom": 14
+        "zoom": ""
       },
       {
         "id": "osm_vector",
@@ -505,8 +505,8 @@ const layers = [
       },
       {
         "id": "Open_Topo_Map_vector",
-        "label": "Open Topo Map",
-        "name": "Open Topo Map",
+        "label": "Open_Topo_Map",
+        "name": "Open_Topo_Map",
         "url": "https://tile.opentopomap.org/{z}/{x}/{y}.png",
         "group": "vector",
         "type": "vector",
@@ -558,9 +558,9 @@ const layers = [
         "zoom": ""
       },
       {
-        "id": "river_World_maps-for-free",
+        "id": "River_World_maps-for-free",
         "label": "maps-for-free_World_river",
-        "name": "river_World_maps-for-free",
+        "name": "River_World_maps-for-free",
         "url": `/maps-for-free/layer/water/z{z}/row{y}/{z}_{x}-{y}.gif`,
         "group": "river",
         "type": "image",
@@ -580,7 +580,7 @@ const layers = [
     "children": [
       {
         "id": "Sentinel_2",
-        "label": "Sentinel_2 夜间灯光",
+        "label": "夜间灯光_Sentinel2",
         "name": "Sentinel_2",
         "url": "https://tiles.maps.eox.at/wmts/1.0.0/WMTSCapabilities.xml",
         "group": "light",
@@ -623,7 +623,7 @@ const layers = [
       },
       {
         "id": "OpenRailwayMap_road_net",
-        "label": "基于OSM铁路数据的在线PNG底图OpenRailwayMap",
+        "label": "基于OSM铁路数据的在线PNG底图_OpenRailwayMap",
         "name": "OpenRailwayMap",
         "url": `https://a.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png`,
         "group": "road_net",
@@ -634,7 +634,7 @@ const layers = [
       },
       {
         "id": "OpenRailwayMap_Maxspeed_road_net",
-        "label": "ORM最大速度图 OpenRailwayMap Maxspeed",
+        "label": "ORM最大速度图_OpenRailwayMap_Maxspeed",
         "name": "OpenRailwayMap Maxspeed",
         "url": `https://a.tiles.openrailwaymap.org/maxspeed/{z}/{x}/{y}.png`,
         "group": "road_net",
@@ -646,7 +646,7 @@ const layers = [
       {
         "id": "road_World_maps-for-free",
         "label": "路网_maps-for-free",
-        "name": "road_World_maps-for-free",
+        "name": "Road_World_maps-for-free",
         "url": `/maps-for-free/layer/streets/z{z}/row{y}/{z}_{x}-{y}.gif`,
         "group": "road_net",
         "type": "road",
@@ -696,7 +696,7 @@ const layers = [
         "type": "anotation",
         "serviceType": "xyz",
         "visible": false,
-        "zoom": 12
+        "zoom": ""
       },
     ]
   },

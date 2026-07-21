@@ -96,7 +96,7 @@
 
               <!-- 眼睛图标（名称后，仅叶子节点） -->
               <span
-                v-if="data.type !== 'group'"
+                v-if="!data.children"
                 class="eye-icon"
                 :class="{ 'eye-visible': data.visible, 'eye-hidden': !data.visible }"
                 @click.stop="toggleEye(data)"

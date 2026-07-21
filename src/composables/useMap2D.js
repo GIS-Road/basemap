@@ -280,10 +280,11 @@ export function useMap2D() {
     const layer = new TileLayer({
       source,
       visible: true,
-      minZoom: options.zoom || 0,
+      // minZoom: options.zoom || 0,
       properties: { layerId }
     })
-    addLayerToTop(map, layerId, layer)
+    map.addLayer(layer)
+    // addLayerToTop(map, layerId, layer)
   }
 
   /**
