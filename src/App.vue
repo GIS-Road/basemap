@@ -4,7 +4,7 @@
     <header class="app-header">
       <div class="header-left">
         <div class="logo-icon">
-          <svg viewBox="0 0 32 32" width="28" height="28">
+          <!-- <svg viewBox="0 0 32 32" width="28" height="28">
             <defs>
               <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stop-color="#4096FF" />
@@ -20,7 +20,8 @@
             <circle cx="16" cy="18" r="1" fill="#69b1ff" />
             <path d="M10 10 L8 8 M22 18 L24 20 M22 10 L24 8 M10 18 L8 20"
               stroke="#69b1ff" stroke-width="0.8" opacity="0.5" />
-          </svg>
+          </svg> -->
+          <img class="layer-icon" src="./assets/image/layers/terrain.svg" alt="logo" width="20" height="20">
         </div>
         <h1 class="header-title">在线底图服务系统</h1>
       </div>
@@ -112,7 +113,7 @@
         />
 
         <!-- 底图选择器（可折叠面板，默认收起） -->
-        <div class="base-map-selector" v-if="mapStore.mapMode === '2d'">
+        <div class="base-map-selector" v-if="mapStore.mapMode === '5d'">
           <button
             class="base-map-toggle"
             :class="{ expanded: baseMapExpanded }"
