@@ -15,7 +15,8 @@
       </div>
       <div class="panel-toggle" @click="isCollapsed = !isCollapsed">
         <svg viewBox="0 0 16 16" width="14" height="14" :style="{ transform: !isCollapsed ? 'rotate(180deg)' : '' }">
-          <path d="M6 4 L11 8 L6 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M6 4 L11 8 L6 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+            stroke-linejoin="round" />
         </svg>
       </div>
     </div>
@@ -28,12 +29,7 @@
           <circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.3" />
           <line x1="11" y1="11" x2="14.5" y2="14.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
         </svg>
-        <input
-          v-model="filterText"
-          class="layer-search-input"
-          type="text"
-          placeholder="搜索图层..."
-        />
+        <input v-model="filterText" class="layer-search-input" type="text" placeholder="搜索图层..." />
         <span v-if="filterText" class="layer-search-clear" @click="filterText = ''">
           <svg viewBox="0 0 12 12" width="10" height="10">
             <path d="M2 2 L10 10 M10 2 L2 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
@@ -41,78 +37,58 @@
         </span>
       </div>
 
-      <el-tree
-        ref="treeRef"
-        :data="treeData"
-        :props="treeProps"
-        node-key="id"
-        :default-expanded-keys="defaultExpandedKeys"
-        :expand-on-click-node="true"
-        :highlight-current="true"
-        :indent="20"
-        :filter-node-method="filterNode"
-        draggable
-        :allow-drag="allowDrag"
-        :allow-drop="allowDrop"
-        @node-click="handleNodeClick"
-        @node-drop="handleNodeDrop"
-      >
+      <el-tree ref="treeRef" :data="treeData" :props="treeProps" node-key="id"
+        :default-expanded-keys="defaultExpandedKeys" :expand-on-click-node="true" :highlight-current="true" :indent="20"
+        :filter-node-method="filterNode" draggable :allow-drag="allowDrag" :allow-drop="allowDrop"
+        @node-click="handleNodeClick" @node-drop="handleNodeDrop">
         <template #default="{ data }">
-          <div
-            class="tree-node"
-            :class="{ 'is-layer': data.type !== 'group', 'is-selected': selectedNodeId === data.id }"
-          >
+          <div class="tree-node"
+            :class="{ 'is-layer': data.type !== 'group', 'is-selected': selectedNodeId === data.id }">
             <div class="tree-node-main">
               <!-- 图标 -->
               <span class="node-icon">
-                <!-- 影像/卫星 -->
-                <img v-if="data.children" class="layer-icon" :src="getIconUrl(data.icon)" alt="图标" width="20" height="20">
+                <img v-if="data.children" class="layer-icon" :src="getIconUrl(data.icon)" alt="图标" width="20"
+                  height="20">
               </span>
 
               <!-- 标签（带截断 + 上方 tooltip） -->
-              <span
-                class="node-label-wrapper"
-                :data-truncated="truncatedMap[data.id] ? 'true' : 'false'"
-                @mouseenter="checkTruncation($event, data.id)"
-              >
-                <span class="node-label">{{ data.label }}</span>
+              <span class="node-label-wrapper" :data-truncated="truncatedMap[data.id] ? 'true' : 'false'"
+                @mouseenter="checkTruncation($event, data.id)">
+                <span class="node-label">
+                  <span>{{ data.label }}</span>
+                  <span v-if="data.children" class="node-label-children">（{{ data.children.length }}）</span>
+                </span>
                 <span class="node-label-tooltip">{{ data.label }}</span>
               </span>
 
               <!-- 透明度设置图标（仅叶子节点，名称后） -->
-              <span
-                v-if="data.type !== 'group'"
-                class="opacity-icon"
-                :class="{ 'opacity-active': activeOpacityId === data.id }"
-                @click.stop="openOpacityPopup(data, $event)"
-                :title="'透明度设置'"
-              >
+              <span v-if="!data.children" class="opacity-icon"
+                :class="{ 'opacity-active': activeOpacityId === data.id }" @click.stop="openOpacityPopup(data, $event)"
+                :title="'透明度设置'">
                 <svg viewBox="0 0 16 16" width="14" height="14">
-                  <path d="M8 5.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z" fill="none" stroke="currentColor" stroke-width="1.2" />
-                  <path d="M8 1.5l-.6 1.8a4.8 4.8 0 00-1.3.5L4.4 2.8 2.8 4.4l1 1.7a4.8 4.8 0 00-.5 1.3L1.5 8l1.8.6c.1.5.3.9.5 1.3l-1 1.7 1.6 1.6 1.7-1c.4.2.8.4 1.3.5L8 14.5l.6-1.8c.5-.1.9-.3 1.3-.5l1.7 1 1.6-1.6-1-1.7c.2-.4.4-.8.5-1.3l1.8-.6-1.8-.6a4.8 4.8 0 00-.5-1.3l1-1.7-1.6-1.6-1.7 1a4.8 4.8 0 00-1.3-.5L8 1.5z"
+                  <path d="M8 5.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z" fill="none" stroke="currentColor"
+                    stroke-width="1.2" />
+                  <path
+                    d="M8 1.5l-.6 1.8a4.8 4.8 0 00-1.3.5L4.4 2.8 2.8 4.4l1 1.7a4.8 4.8 0 00-.5 1.3L1.5 8l1.8.6c.1.5.3.9.5 1.3l-1 1.7 1.6 1.6 1.7-1c.4.2.8.4 1.3.5L8 14.5l.6-1.8c.5-.1.9-.3 1.3-.5l1.7 1 1.6-1.6-1-1.7c.2-.4.4-.8.5-1.3l1.8-.6-1.8-.6a4.8 4.8 0 00-.5-1.3l1-1.7-1.6-1.6-1.7 1a4.8 4.8 0 00-1.3-.5L8 1.5z"
                     fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" />
                 </svg>
               </span>
 
               <!-- 眼睛图标（名称后，仅叶子节点） -->
-              <span
-                v-if="!data.children"
-                class="eye-icon"
-                :class="{ 'eye-visible': data.visible, 'eye-hidden': !data.visible }"
-                @click.stop="toggleEye(data)"
-                :title="data.visible ? '隐藏图层' : '显示图层'"
-              >
+              <span v-if="!data.children" class="eye-icon"
+                :class="{ 'eye-visible': data.visible, 'eye-hidden': !data.visible }" @click.stop="toggleEye(data)"
+                :title="data.visible ? '隐藏图层' : '显示图层'">
                 <!-- 睁眼 -->
                 <svg v-if="data.visible" viewBox="0 0 16 16" width="14" height="14">
-                  <path d="M8 4C4.5 4 1.5 7 0.5 8c1 1 4 4 7.5 4S14.5 9 15.5 8c-1-1-4-4-7.5-4z"
-                    fill="none" stroke="currentColor" stroke-width="1.2" />
+                  <path d="M8 4C4.5 4 1.5 7 0.5 8c1 1 4 4 7.5 4S14.5 9 15.5 8c-1-1-4-4-7.5-4z" fill="none"
+                    stroke="currentColor" stroke-width="1.2" />
                   <circle cx="8" cy="8" r="2.5" fill="none" stroke="currentColor" stroke-width="1.2" />
                   <circle cx="8" cy="8" r="0.8" fill="currentColor" />
                 </svg>
                 <!-- 闭眼 -->
                 <svg v-else viewBox="0 0 16 16" width="14" height="14">
-                  <path d="M8 4C4.5 4 1.5 7 0.5 8c1 1 4 4 7.5 4S14.5 9 15.5 8c-1-1-4-4-7.5-4z"
-                    fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.4" />
+                  <path d="M8 4C4.5 4 1.5 7 0.5 8c1 1 4 4 7.5 4S14.5 9 15.5 8c-1-1-4-4-7.5-4z" fill="none"
+                    stroke="currentColor" stroke-width="1.2" opacity="0.4" />
                   <line x1="2" y1="2" x2="14" y2="14" stroke="currentColor" stroke-width="1.2" />
                 </svg>
               </span>
@@ -147,14 +123,8 @@
 
     <!-- 透明度浮动弹出面板（在 el-tree 外部，不受拖拽影响） -->
     <Teleport to="body">
-      <div
-        v-if="activeOpacityId"
-        class="opacity-popup"
-        :style="{ top: popupPos.y + 'px', left: popupPos.x + 'px' }"
-        @click.stop
-        @mousedown.stop
-        @pointerdown.stop
-      >
+      <div v-if="activeOpacityId" class="opacity-popup" :style="{ top: popupPos.y + 'px', left: popupPos.x + 'px' }"
+        @click.stop @mousedown.stop @pointerdown.stop>
         <div class="opacity-popup-header">
           <span class="opacity-popup-title">{{ activeOpacityLabel }} - 透明度</span>
           <span class="opacity-popup-close" @click="closeOpacityPopup">
@@ -164,15 +134,8 @@
           </span>
         </div>
         <div class="opacity-popup-body">
-          <input
-            type="range"
-            class="opacity-slider"
-            min="0"
-            max="1"
-            step="0.05"
-            :value="activeOpacityValue"
-            @input="onPopupOpacityChange($event)"
-          />
+          <input type="range" class="opacity-slider" min="0" max="1" step="0.05" :value="activeOpacityValue"
+            @input="onPopupOpacityChange($event)" />
           <span class="opacity-value">{{ Math.round(activeOpacityValue * 100) }}%</span>
         </div>
       </div>
@@ -536,6 +499,7 @@ function onDocumentClick() {
     opacity: 0;
     transform: translateY(-4px) scale(0.96);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -682,6 +646,10 @@ function onDocumentClick() {
   transition: color 0.2s;
 }
 
+.node-label-children {
+  color: #13edc8;
+}
+
 /* 选中态：激活色高亮 */
 .tree-node.is-selected .node-label {
   color: #4096FF;
@@ -806,26 +774,26 @@ function onDocumentClick() {
 }
 
 /* ===== 选中节点高亮（激活色，非白色背景）===== */
-.layer-tree-container .el-tree-node.is-current > .el-tree-node__content {
+.layer-tree-container .el-tree-node.is-current>.el-tree-node__content {
   background: rgba(64, 150, 255, 0.15) !important;
 }
 
-.layer-tree-container .el-tree-node.is-current > .el-tree-node__content:hover {
+.layer-tree-container .el-tree-node.is-current>.el-tree-node__content:hover {
   background: rgba(64, 150, 255, 0.2) !important;
 }
 
 /* ===== 分组节点样式 ===== */
-.layer-tree-container .el-tree-node[aria-level="1"] > .el-tree-node__content {
+.layer-tree-container .el-tree-node[aria-level="1"]>.el-tree-node__content {
   padding-left: 4px;
   font-weight: 500;
 }
 
 /* ===== 拖拽时的视觉反馈 ===== */
-.layer-tree-container .el-tree-node.is-dragging > .el-tree-node__content {
+.layer-tree-container .el-tree-node.is-dragging>.el-tree-node__content {
   opacity: 0.4;
 }
 
-.layer-tree-container .el-tree-node.is-drop-inner > .el-tree-node__content {
+.layer-tree-container .el-tree-node.is-drop-inner>.el-tree-node__content {
   background: rgba(64, 150, 255, 0.15) !important;
 }
 
@@ -839,7 +807,7 @@ function onDocumentClick() {
 }
 
 /* 禁止放入分组内部 */
-.layer-tree-container .el-tree-node[aria-level="1"].is-drop-inner > .el-tree-node__content {
+.layer-tree-container .el-tree-node[aria-level="1"].is-drop-inner>.el-tree-node__content {
   background: transparent !important;
 }
 
@@ -856,7 +824,7 @@ function onDocumentClick() {
   color: transparent !important;
 }
 
-.layer-icon{
+.layer-icon {
   width: 20px;
   height: 20px;
 }
