@@ -341,17 +341,6 @@ const layers = [
         "zoom": ""
       },
       {
-        "id": "terrain_Esri_Topography",
-        "label": "Esri_World_Topo_Map",
-        "name": "Esri_World_Topo_Map",
-        "url": `https://server.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}`,
-        "group": "terrain",
-        "type": "terrain",
-        "serviceType": "xyz",
-        "visible": false,
-        "zoom": ""
-      },
-      {
         "id": "terrain_Esri_Shaded_Relief",
         "label": "Esri_Shaded_Relief",
         "name": "Esri_Shaded_Relief",
@@ -388,7 +377,18 @@ const layers = [
         "id": "terrain_EMODnet",
         "label": "欧洲海洋观测EMODnet",
         "name": "欧洲海洋观测EMODnet",
-        "url": `https://tiles.emodnet_bathymetry.eu/2020/baselayer/web_mercator/{z}/{x}/{y}.png`,
+        "url": `https://tiles.emodnet-bathymetry.eu/2020/baselayer/web_mercator/{z}/{x}/{y}.png`,
+        "group": "terrain",
+        "type": "terrain",
+        "serviceType": "xyz",
+        "visible": false,
+        "zoom": ""
+      },
+      {
+        "id": "Terrain_background_layer_by_EOX",
+        "label": "Terrain_background_layer_by_EOX",
+        "name": "Terrain_background_layer_by_EOX",
+        "url": `https://tiles.emodnet-bathymetry.eu/2020/baselayer/web_mercator/{z}/{x}/{y}.png`,
         "group": "terrain",
         "type": "terrain",
         "serviceType": "xyz",
@@ -475,7 +475,8 @@ const layers = [
         "id": "bing_image",
         "label": "影像_Bing",
         "name": "影像_Bing",
-        "url": "http://ecn.t{0_3}.tiles.virtualearth.net/tiles/a{q}.jpeg?g=7786",
+        // "url": "http://ecn.t{0_3}.tiles.virtualearth.net/tiles/a{q}.jpeg?g=7786",
+        "url": "http://ecn.t3.tiles.virtualearth.net/tiles/a{q}.ipeg?g=0&dir=dir n'",
         "group": "image",
         "type": "image",
         "serviceType": "xyz",
@@ -563,17 +564,6 @@ const layers = [
         "label": "Open_Topo_Map",
         "name": "Open_Topo_Map",
         "url": "https://tile.opentopomap.org/{z}/{x}/{y}.png",
-        "group": "vector",
-        "type": "vector",
-        "serviceType": "xyz",
-        "visible": false,
-        "zoom": ""
-      },
-      {
-        "id": "OpenStreetMap_vector",
-        "label": "OpenStreetMap",
-        "name": "OpenStreetMap",
-        "url": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
         "group": "vector",
         "type": "vector",
         "serviceType": "xyz",
@@ -731,6 +721,29 @@ const layers = [
         "visible": false,
         "zoom": ""
       },
+      {
+        "id": "road_osm_street",
+        "label": "road_osm_street",
+        "name": "road_osm_street",
+        "url": `https://tile.openstreetmap.bzh/br/{z}/{x}/{y}.png`,
+        "group": "road_net",
+        "type": "road",
+        "serviceType": "xyz",
+        "visible": false,
+        "zoom": ""
+      },
+      // {
+      //   "id": "Streets_overlay_layer_by_EOX",
+      //   "label": "Streets_overlay_layer_by_EOX",
+      //   "name": "Streets_overlay_layer_by_EOX",
+      //   // "url": `https://tiles.maps.eox.at/wmts/1.0.0/WMTSCapabilities.xml`,
+      //   "url": `http://tiles.maps.eox.at/wmts/1.0.0/streets_3857/default/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.png`,
+      //   "group": "road_net",
+      //   "type": "road",
+      //   "serviceType": "xyz",
+      //   "visible": false,
+      //   "zoom": ""
+      // },
     ]
   },
   //==========================路网图层结束============================//
@@ -767,6 +780,17 @@ const layers = [
         "label": "天地图矢量注记",
         "name": "tdt_vector_label",
         "url": `https://t{0-7}.tianditu.gov.cn/DataServer?T=cva_w&x={x}&y={y}&l={z}&tk=${TDT_TOKEN}`,
+        "group": "anotation",
+        "type": "anotation",
+        "serviceType": "xyz",
+        "visible": false,
+        "zoom": ""
+      },
+      {
+        "id": "Esri_World_Boundaries_and_Places",
+        "label": "Esri_World_Boundaries_and_Places",
+        "name": "Esri_World_Boundaries_and_Places",
+        "url": `https://server.arcgisonline.com/arcgis/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}`,
         "group": "anotation",
         "type": "anotation",
         "serviceType": "xyz",
