@@ -46,18 +46,21 @@ basemap/
         └── layers.js             # 图层配置
 ```
 ## 项目效果
-![alt text](<src/assets/效果图/image (1).png>) 
 
-![alt text](<src/assets/效果图/image (2).png>) 
+![alt text](src/assets/效果图/arrow-line.png) 
 
-![alt text](<src/assets/效果图/image (3).png>) 
+![alt text](src/assets/效果图/arrow.png) 
 
-![alt text](<src/assets/效果图/image (4).png>) 
+![alt text](src/assets/效果图/basemap-image.png) 
 
-![alt text](src/assets/效果图/image.png)
+![alt text](src/assets/效果图/basemap-vector.png) 
 
+![alt text](src/assets/效果图/circle.png) 
 
-![alt text](src/assets/效果图/image1.png)
+![alt text](src/assets/效果图/rectangle.png) 
+
+![alt text](src/assets/效果图/simple-line.png)
+
 ## 项目特点
 - 二三维一体化应用
 - 在线底图服务
