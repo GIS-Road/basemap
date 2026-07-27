@@ -330,17 +330,6 @@ const layers = [
         "zoom": ""
       },
       {
-        "id": "terrain_World_Ocean_Base",
-        "label": "Esri_World_Ocean_Base",
-        "name": "Esri_World_Ocean_Base",
-        "url": `https://server.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}`,
-        "group": "terrain",
-        "type": "terrain",
-        "serviceType": "xyz",
-        "visible": false,
-        "zoom": ""
-      },
-      {
         "id": "terrain_Esri_Shaded_Relief",
         "label": "Esri_Shaded_Relief",
         "name": "Esri_Shaded_Relief",
@@ -385,10 +374,10 @@ const layers = [
         "zoom": ""
       },
       {
-        "id": "Terrain_background_layer_by_EOX",
-        "label": "Terrain_background_layer_by_EOX",
-        "name": "Terrain_background_layer_by_EOX",
-        "url": `https://tiles.emodnet-bathymetry.eu/2020/baselayer/web_mercator/{z}/{x}/{y}.png`,
+        "id": "terrain_World_Ocean_Base",
+        "label": "Esri_World_Ocean_Base",
+        "name": "Esri_World_Ocean_Base",
+        "url": `https://server.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}`,
         "group": "terrain",
         "type": "terrain",
         "serviceType": "xyz",
