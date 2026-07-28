@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import layerConfig from '../config/layers.js'
-// import { de } from 'element-plus/es/locales.mjs'
-
 
 export const useMapStore = defineStore('map', () => {
   // 图层树（从配置文件构建）

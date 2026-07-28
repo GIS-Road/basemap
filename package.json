@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "description": "二三维一体化在线底图服务系统",
   "scripts": {
     "dev": "vite --open",
     "build": "vite build",
