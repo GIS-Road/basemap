@@ -8,6 +8,13 @@ export default defineConfig({
     vue(),
     cesium()
   ],
+  base: "./",
+  build: {
+    // 应用输出路径，与Nginx配置一致
+    outDir: "dist",
+    // 静态资源存放路径
+    assetsDir: "assets",
+  },
   server: {
     port: 3000,
     host: true,
