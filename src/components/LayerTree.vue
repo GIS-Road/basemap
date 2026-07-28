@@ -146,7 +146,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useMapStore } from '../stores/mapStore'
-import { da } from 'element-plus/es/locales.mjs'
+
 const mapStore = useMapStore()
 const isCollapsed = ref(false)
 const treeRef = ref(null)
@@ -158,11 +158,10 @@ const activeOpacityLabel = ref('')
 const activeOpacityValue = ref(1)
 const popupPos = ref({ x: 0, y: 0 })
 
-// 配置svg图标
-const iconModules = import.meta.glob('@/assets/image/layers/*.svg', { eager: true, as: 'url' })
-
 // 获取图标路径的方法
 const getIconUrl = (iconName) => {
+  // 配置svg图标
+  const iconModules = import.meta.glob('@/assets/image/layers/*.svg', { eager: true, as: 'url' })
   try {
     return iconModules[`/src/assets/image/layers/${iconName}`]
   } catch {
@@ -192,10 +191,11 @@ function checkTruncation(event, id) {
 }
 
 const treeData = computed(() => mapStore.layerTree)
-// 默认展开的分组（仅 expanded: true 的分组）
+
+// 图层目录默认展开项，返回数据ID
 const defaultExpandedKeys = computed(() => {
   return mapStore.layerTree
-    .filter(node => node.type === 'group' && node.expanded)
+    .filter(node => node.type === 'catalog' && node.expanded)
     .map(node => node.id)
 })
 
@@ -204,7 +204,7 @@ const defaultExpandedKeys = computed(() => {
 function filterNode(value, data) {
   if (!value) return true
   // 分组节点始终显示（以便展开查看子图层）
-  if (data.type === 'group') return true
+  if (data.type === 'catalog') return true
   return data.label.toLowerCase().includes(value.toLowerCase())
 }
 

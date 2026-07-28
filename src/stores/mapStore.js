@@ -1,36 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import layerConfig from '../config/layers.js'
-import { de } from 'element-plus/es/locales.mjs'
+// import { de } from 'element-plus/es/locales.mjs'
 
-/**
- * 将 layers.js children 树形配置构建为图层树结构
- * config 格式：[{ id, label, expanded, children: [{ id, label, url, type, ... }] }]
- */
-function buildLayerTree(config) {
-  return config.map(group => ({
-    id: group.id,
-    label: group.label,
-    type: 'group',
-    expanded: group.expanded,
-    icon:group.icon,
-    children: (group.children || []).map(l => ({
-      id: l.id,
-      label: l.label,
-      name: l.name,
-      url: l.url,
-      type: l.type,
-      serviceType: l.serviceType,
-      visible: l.visible,
-      opacity: l.opacity !== undefined ? l.opacity : 1,
-      zoom: l.zoom !== undefined ? l.zoom : 0
-    }))
-  }))
-}
 
 export const useMapStore = defineStore('map', () => {
   // 图层树（从配置文件构建）
-  const layerTree = ref(buildLayerTree(layerConfig))
+  const layerTree = ref(layerConfig)
 
   // 当前地图模式：'2d' | '3d'
   const mapMode = ref('2d')

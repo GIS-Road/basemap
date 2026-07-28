@@ -4,23 +4,6 @@
     <header class="app-header">
       <div class="header-left">
         <div class="logo-icon">
-          <!-- <svg viewBox="0 0 32 32" width="28" height="28">
-            <defs>
-              <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#4096FF" />
-                <stop offset="100%" stop-color="#1677FF" />
-              </linearGradient>
-            </defs>
-            <circle cx="16" cy="16" r="14" fill="none" stroke="url(#logoGrad)" stroke-width="2" />
-            <ellipse cx="16" cy="14" rx="8" ry="5" fill="none" stroke="url(#logoGrad)" stroke-width="1.5" opacity="0.7" />
-            <line x1="16" y1="4" x2="16" y2="2" stroke="#4096FF" stroke-width="1.5" />
-            <line x1="16" y1="28" x2="16" y2="30" stroke="#4096FF" stroke-width="1.5" />
-            <circle cx="12" cy="13" r="1.5" fill="#69b1ff" />
-            <circle cx="20" cy="15" r="1.5" fill="#69b1ff" />
-            <circle cx="16" cy="18" r="1" fill="#69b1ff" />
-            <path d="M10 10 L8 8 M22 18 L24 20 M22 10 L24 8 M10 18 L8 20"
-              stroke="#69b1ff" stroke-width="0.8" opacity="0.5" />
-          </svg> -->
           <img class="layer-icon" src="./assets/image/layers/terrain.svg" alt="logo" width="20" height="20">
         </div>
         <h1 class="header-title">在线底图服务系统</h1>
