@@ -1,7 +1,11 @@
-// 天地图token
-const TDT_TOKEN = "fa7ec9766b2c00747e3dd60ab3d05892"
-// 星图token
-const GEOVISEARTH = "15d2ddab335383b5d485b78a3e04ac9f92683ee2e3b04cdf862cb292168674e7"
+/**
+ * @description 系统图层配置
+ * @file       layers.js
+ * @author     gis_road
+ * @date       2026-07-28
+ */
+
+import CONFIG from "./config"
 
 // ESRI Wayback 历史影像瓦片服务基础地址
 // 瓦片 URL 格式: {base}/tile/{releaseNum}/{z}/{y}/{x}
@@ -284,6 +288,7 @@ const layers = [
     "label": "地形图层",
     "expanded": true,
     "icon": `terrain.svg`,
+    "type": "catalog",
     "children": [
       {
         "id": "Relief_esri_maps_white",
@@ -311,7 +316,7 @@ const layers = [
         "id": "relief_ter_tianditu",
         "label": "山体阴影_天地图",
         "name": "山体阴影_天地图",
-        "url": `https://t{0-7}.tianditu.gov.cn/DataServer?T=ter_w&x={x}&y={y}&l={z}&tk=${TDT_TOKEN}`,
+        "url": `https://t{0-7}.tianditu.gov.cn/DataServer?T=ter_w&x={x}&y={y}&l={z}&tk=${CONFIG.VITE_APP_TDT_TOKEN}`,
         "group": "terrain",
         "type": "terrain",
         "serviceType": "xyz",
@@ -415,12 +420,13 @@ const layers = [
     "label": "影像图层",
     "expanded": true,
     "icon": `image.svg`,
+    "type": "catalog",
     "children": [
       {
         "id": "tianditu_img",
         "label": "天地图影像",
         "name": "tianditu_img",
-        "url": `https://t{0-7}.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=${TDT_TOKEN}`,
+        "url": `https://t{0-7}.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=${CONFIG.VITE_APP_TDT_TOKEN}`,
         "group": "image",
         "type": "image",
         "serviceType": "xyz",
@@ -431,7 +437,7 @@ const layers = [
         "id": "geovisearth",
         "label": "星图地球_影像",
         "name": "星图地球",
-        "url": "https://tiles.geovisearth.com/base/v1/img/{z}/{x}/{y}?format=webp&tmsIds=w&token=" + GEOVISEARTH,
+        "url": `https://tiles.geovisearth.com/base/v1/img/{z}/{x}/{y}?format=webp&tmsIds=w&token=${CONFIG.VITE_APP_GEOVISEARTH_TOKEN}`,
         "group": "image",
         "type": "image",
         "serviceType": "xyz",
@@ -503,12 +509,13 @@ const layers = [
     "label": "矢量图层",
     "expanded": false,
     "icon": `vector.svg`,
+    "type": "catalog",
     "children": [
       {
         "id": "tdt_vector",
         "label": "天地图矢量",
         "name": "tianditu_vec",
-        "url": `https://t{0-7}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}&tk=${TDT_TOKEN}`,
+        "url": `https://t{0-7}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}&tk=${CONFIG.VITE_APP_TDT_TOKEN}`,
         "group": "vector",
         "type": "vector",
         "serviceType": "xyz",
@@ -579,6 +586,7 @@ const layers = [
     "label": "水系图层",
     "expanded": false,
     "icon": `river.svg`,
+    "type": "catalog",
     "children": [
       {
         "id": "tencent_river",
@@ -611,6 +619,7 @@ const layers = [
     "label": "灯光图层",
     "expanded": false,
     "icon": `light.svg`,
+    "type": "catalog",
     "children": [
       {
         "id": "Sentinel_2",
@@ -632,6 +641,7 @@ const layers = [
     "label": "路网图层",
     "expanded": false,
     "icon": `road_net.svg`,
+    "type": "catalog",
     "children": [
       {
         "id": "gaode_road_net_GJC02",
@@ -743,6 +753,7 @@ const layers = [
     "label": "行政区图层",
     "expanded": false,
     "icon": `region.svg`,
+    "type": "catalog",
     "children": [
       {
         "id": "Esri_World_Ocean_Reference",
@@ -763,12 +774,13 @@ const layers = [
     "label": "注记图层",
     "expanded": true,
     "icon": `anotation.svg`,
+    "type": "catalog",
     "children": [
       {
         "id": "tdt_vector_label",
         "label": "天地图矢量注记",
         "name": "tdt_vector_label",
-        "url": `https://t{0-7}.tianditu.gov.cn/DataServer?T=cva_w&x={x}&y={y}&l={z}&tk=${TDT_TOKEN}`,
+        "url": `https://t{0-7}.tianditu.gov.cn/DataServer?T=cva_w&x={x}&y={y}&l={z}&tk=${CONFIG.VITE_APP_TDT_TOKEN}`,
         "group": "anotation",
         "type": "anotation",
         "serviceType": "xyz",
@@ -795,6 +807,7 @@ const layers = [
     "label": "土地利用图层",
     "expanded": false,
     "icon": `landuse.svg`,
+    "type": "catalog",
     "children": [
       {
         "id": "osm_landuse",
@@ -893,6 +906,7 @@ const layers = [
     "label": "Wayback 历史影像图层",
     "expanded": false,
     "icon": `image.svg`,
+    "type": "catalog",
     "children": [
       ...waybackLayerConfigs,
     ]
