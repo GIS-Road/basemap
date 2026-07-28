@@ -11,7 +11,7 @@ import { addProjection, addCoordinateTransforms, getTransform, fromLonLat, toLon
 import Zoom from 'ol/control/Zoom'
 import Attribution from 'ol/control/Attribution'
 
-import CONFIG from "@/src/config/config.js"
+import CONFIG from "@/config/config.js"
 
 // ====================== 注册 EPSG:4490 坐标系 (CGCS2000) ======================
 // 无需外部 proj4 库，通过坐标变换链实现 EPSG:4490 ↔ EPSG:4326 ↔ EPSG:3857
