@@ -1,6 +1,6 @@
 /**
  * @description OpenLayers 工具库
- * @file        config.js
+ * @file        olTool.js
  * @author      gis_road
  * @date        2026/8/6
  */
