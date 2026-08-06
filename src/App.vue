@@ -146,6 +146,7 @@ import { useMap3D } from './composables/useMap3D'
 import LayerTree from './components/LayerTree.vue'
 import MapToggle from './components/MapToggle.vue'
 import DrawingToolbar from './components/DrawingToolbar.vue'
+import {createPulseEffect} from "@/utils/olTool.js";
 
 const mapStore = useMapStore()
 const { initMap, switchBaseMap: switch2DBase, setLayerVisible, setLayerOpacity, addLayerToTop, removeDynamicLayer, hasDynamicLayer, createOverlayAndAddToTop, createWmtsOverlayAndAddToTop, syncLayerOrder, getCenter, getZoom, setView, flyToLocation, destroyMap } = useMap2D()
@@ -228,7 +229,9 @@ async function init2DMap() {
     zoom: mapStore.mapZoom,
     baseMap: mapStore.activeBaseMap
   })
-
+  window._map = map2d
+  // createPulseEffect(map2d,[102.671458, 25.012298])
+  // createPulseEffect(map2d,[11430099.806702323, 2877020.183828798])
   syncLayersToMap(map2d)
 
   // 监听视角变化（仅存 store 中心/缩放，不再显示中心坐标）
@@ -249,6 +252,7 @@ async function init2DMap() {
   // 地图点击锁定拾取坐标
   map2d.on('click', (evt) => {
     if (mapStore.isDrawingActive) return
+    console.log(evt.coordinate)
     const coord = toLonLat(evt.coordinate)
     pickedCoord.value = [coord[0], coord[1]]
   })
