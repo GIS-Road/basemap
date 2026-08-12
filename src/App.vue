@@ -150,7 +150,7 @@ import {createPulseEffect} from "@/utils/olTool.js";
 
 const mapStore = useMapStore()
 const { initMap, switchBaseMap: switch2DBase, setLayerVisible, setLayerOpacity, addLayerToTop, removeDynamicLayer, hasDynamicLayer, createOverlayAndAddToTop, createWmtsOverlayAndAddToTop, syncLayerOrder, getCenter, getZoom, setView, flyToLocation, destroyMap } = useMap2D()
-const { initViewer, getCenter: get3DCenter, getApproximateZoom, flyTo, destroyViewer } = useMap3D()
+const { initViewer, syncLayersToViewer, BASE_MAP_IDS, getCenter: get3DCenter, getApproximateZoom, flyTo, destroyViewer } = useMap3D()
 
 const map2dRef = ref(null)
 const map3dRef = ref(null)
@@ -268,6 +268,9 @@ async function init3DMap() {
     zoom: mapStore.mapZoom
   })
 
+  // 将图层树中勾选的在线服务同步到 3D 场景（含默认底图天地图影像）
+  syncLayersToViewer(viewer3d, mapStore.layerTree)
+
   // 监听相机变化
   viewer3d.camera.changed.addEventListener(() => {
     const center = get3DCenter(viewer3d)
@@ -283,6 +286,13 @@ function switchBaseMap(mapId) {
   mapStore.setActiveBaseMap(mapId)
   if (map2d) {
     switch2DBase(map2d, mapId)
+  }
+  // 3D 模式下：将底图互斥可见性同步到图层树（watch 会自动同步 3D 场景）
+  if (viewer3d && mapStore.mapMode === '3d') {
+    const layerId = mapId === 'osm' ? 'osm_vector' : mapId
+    BASE_MAP_IDS.forEach(id => {
+      mapStore.setLayerVisibility(id, id === layerId)
+    })
   }
 }
 
@@ -386,9 +396,13 @@ function syncLayersToMap(map) {
   syncLayerOrder(map, mapStore.layerTree)
 }
 
-// 监听图层树变化，同步到地图图层显隐 + 层级顺序 + 透明度
+// 监听图层树变化，按当前模式同步到对应地图（2D 图层显隐+层级+透明度 / 3D 在线服务图层）
 watch(() => mapStore.layerTree, () => {
-  syncLayersToMap(map2d)
+  if (mapStore.mapMode === '2d') {
+    syncLayersToMap(map2d)
+  } else {
+    syncLayersToViewer(viewer3d, mapStore.layerTree)
+  }
 }, { deep: true })
 
 // ==================== 生命周期 ====================
