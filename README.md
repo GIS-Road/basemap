@@ -61,6 +61,13 @@ basemap/
 
 ![alt text](src/assets/效果图/arrow.png) 
 
+![alt text](src/assets/效果图/3d-image.png) 
+
+![alt text](src/assets/效果图/3d-image1.png) 
+
+![alt text](src/assets/效果图/3d-terrain.png) 
+
+![alt text](src/assets/效果图/3d-vector.png)
 ## 项目特点
 - 二三维一体化应用
 - 在线底图服务
@@ -79,6 +86,9 @@ npm run dev
 ```
 npm run build
 ```
+
+## 项目地址
+在线访问地址：`https://gis-road.github.io/basemap/`
 
 
 ## 联系作者
