@@ -5,9 +5,12 @@ import {
   Math as CesiumMath,
   UrlTemplateImageryProvider,
   ImageryLayer,
-  createWorldTerrainAsync
+  createWorldTerrainAsync,
+  ArcGISTiledElevationTerrainProvider,
+  Ion
 } from 'cesium'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
+import CONFIG from '@/config/config.js'
 
 /**
  * @description Cesium 三维地图封装
@@ -31,8 +34,39 @@ export const BASE_MAP_IDS = ['tianditu_img', 'tdt_vector', 'osm_vector']
 // 天地图最大级别（超出返回 404）
 const TDT_MAX_LEVEL = 18
 
+// Esri 全球地形（免费公开、无需 key、国内可访问、全球覆盖）
+const ESRI_TERRAIN_URL = 'https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer'
+
 // WMTS Capabilities 缓存：同一 URL 只 fetch + 解析一次
 const wmtsCapsCache = new Map()
+
+/**
+ * 加载默认地形（多级降级，不阻塞 Viewer 初始化）：
+ * 1) 配置了 Cesium Ion token → 优先 Cesium World Terrain（全球高精度，需联网 assets.cesium.com）
+ * 2) 未配置 / 加载失败 → Esri World Elevation 3D（免费公开，国内可访问）
+ * 3) 全部失败 → 无地形模式（保持平面运行并输出警告）
+ */
+async function loadTerrain(viewer) {
+  const ionToken = CONFIG.VITE_APP_CESIUM_ION_TOKEN
+  if (ionToken) {
+    Ion.defaultAccessToken = ionToken
+    try {
+      const terrainProvider = await createWorldTerrainAsync()
+      viewer.terrainProvider = terrainProvider
+      console.log('[3D] 地形加载成功: Cesium World Terrain')
+      return
+    } catch (err) {
+      console.warn('[3D] Cesium World Terrain 加载失败，降级 Esri 地形:', err.message)
+    }
+  }
+  try {
+    const terrainProvider = await ArcGISTiledElevationTerrainProvider.fromUrl(ESRI_TERRAIN_URL)
+    viewer.terrainProvider = terrainProvider
+    console.log('[3D] 地形加载成功: Esri World Elevation 3D')
+  } catch (err) {
+    console.warn('[3D] 默认地形加载失败，使用无地形模式:', err.message)
+  }
+}
 
 /**
  * 将 OL/XYZ 风格的瓦片 URL 模板转换为 Cesium UrlTemplateImageryProvider 支持的格式
@@ -344,13 +378,8 @@ export function useMap3D() {
       duration: 0
     })
 
-    // 尝试加载地形
-    try {
-      const terrainProvider = await createWorldTerrainAsync()
-      viewer.terrainProvider = terrainProvider
-    } catch (e) {
-      console.warn('默认地形加载失败，使用无地形模式:', e.message)
-    }
+    // 异步加载默认地形（不阻塞底图显示，加载完成后自动贴合地形）
+    loadTerrain(viewer)
 
     viewerInstance.value = viewer
     return viewer

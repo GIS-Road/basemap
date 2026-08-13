@@ -68,41 +68,116 @@ export const useMapStore = defineStore('map', () => {
   }
 
   /**
-   * 获取浏览器定位
+   * 执行一次浏览器定位（单个配置）
+   * @param {boolean} highAccuracy - 是否使用高精度
+   * @param {number} timeout - 超时毫秒数
    * @returns {Promise<{lng: number, lat: number}>}
+   */
+  function getPositionOnce(highAccuracy, timeout) {
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          resolve({
+            lng: pos.coords.longitude,
+            lat: pos.coords.latitude,
+            accuracy: pos.coords.accuracy || 0
+          })
+        },
+        (err) => reject(err),
+        { enableHighAccuracy: highAccuracy, timeout, maximumAge: 60000 }
+      )
+    })
+  }
+
+  /**
+   * IP 定位兜底：浏览器定位不可用时，通过多个免费接口获取城市级位置
+   * 接口按顺序尝试，全部失败则 reject
+   * @returns {Promise<{lng: number, lat: number, accuracy: number}>}
+   */
+  async function locateByIP() {
+    const IP_PROVIDERS = [
+      // geojs.io：免费、CORS 开放、国内可访问
+      async () => {
+        const res = await fetch('https://get.geojs.io/v1/ip/geo.json', { signal: AbortSignal.timeout(5000) })
+        const data = await res.json()
+        if (data.latitude != null && data.longitude != null) {
+          return { lng: Number(data.longitude), lat: Number(data.latitude), accuracy: 50000, city: data.city }
+        }
+        throw new Error('geojs.io 定位失败')
+      },
+      // ipwho.is：免费、CORS 开放、国内可访问
+      async () => {
+        const res = await fetch('https://ipwho.is/', { signal: AbortSignal.timeout(5000) })
+        const data = await res.json()
+        if (data.success && data.latitude != null && data.longitude != null) {
+          return { lng: data.longitude, lat: data.latitude, accuracy: 50000, city: data.city }
+        }
+        throw new Error('ipwho.is 定位失败')
+      }
+    ]
+    let lastErr = null
+    for (const provider of IP_PROVIDERS) {
+      try {
+        return await provider()
+      } catch (err) {
+        lastErr = err
+        console.warn('[定位] IP 定位接口失败:', err.message)
+      }
+    }
+    throw new Error(lastErr?.message || 'IP 定位不可用')
+  }
+
+  /**
+   * 获取当前位置（三级降级）：
+   * 1) 浏览器 GPS 高精度定位
+   * 2) 失败 → 低精度重试（权限被拒则跳过直接走 IP 兜底）
+   * 3) 仍失败 → IP 定位兜底（城市级）
+   * @returns {Promise<{lng: number, lat: number, accuracy: number}>}
    */
   async function getCurrentLocation() {
     locateStatus.value = 'locating'
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        locateStatus.value = 'error'
-        reject(new Error('浏览器不支持地理定位'))
-        return
+    try {
+      // 非安全上下文（非 HTTPS / 非 localhost）下浏览器定位不可用，直接 IP 兜底
+      if (typeof navigator === 'undefined' || !navigator.geolocation) {
+        return finalizeLocation(await locateByIP())
       }
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const result = {
-            lng: pos.coords.longitude,
-            lat: pos.coords.latitude
-          }
-          mapCenter.value = [result.lng, result.lat]
-          mapZoom.value = 14
-          hasLocated.value = true
-          locateStatus.value = 'success'
-          resolve(result)
-        },
-        (err) => {
-          console.warn('定位失败:', err.message)
-          locateStatus.value = 'error'
-          reject(err)
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000
+
+      // 1) 高精度定位（8s 超时）
+      try {
+        return finalizeLocation(await getPositionOnce(true, 8000))
+      } catch (err) {
+        console.warn('[定位] 高精度定位失败:', err.message || err.code)
+        // 权限被拒（code=1）：重试无意义，直接 IP 兜底
+        if (err && err.code === 1) {
+          return finalizeLocation(await locateByIP())
         }
-      )
-    })
+      }
+
+      // 2) 低精度重试（8s 超时）
+      try {
+        return finalizeLocation(await getPositionOnce(false, 8000))
+      } catch (err) {
+        console.warn('[定位] 低精度定位失败:', err.message || err.code)
+      }
+
+      // 3) IP 定位兜底
+      return finalizeLocation(await locateByIP())
+    } catch (err) {
+      console.warn('[定位] 所有定位方式均失败:', err.message)
+      locateStatus.value = 'error'
+      throw err
+    }
+  }
+
+  /**
+   * 定位结果统一收口：更新 store 状态
+   */
+  function finalizeLocation(result) {
+    mapCenter.value = [result.lng, result.lat]
+    mapZoom.value = 14
+    hasLocated.value = true
+    locateStatus.value = 'success'
+    return result
   }
 
   // 切换图层可见性

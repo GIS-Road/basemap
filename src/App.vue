@@ -132,6 +132,13 @@
           :map="map2d"
           class="draw-toolbar-panel"
         />
+
+        <!-- 3D 绘制工具栏（右侧，按钮与 2D 一致） -->
+        <DrawingToolbar3D
+          v-if="mapStore.mapMode === '3d' && viewer3dReady"
+          :viewer="viewer3d"
+          class="draw-toolbar-panel"
+        />
       </main>
     </div>
   </div>
@@ -146,6 +153,7 @@ import { useMap3D } from './composables/useMap3D'
 import LayerTree from './components/LayerTree.vue'
 import MapToggle from './components/MapToggle.vue'
 import DrawingToolbar from './components/DrawingToolbar.vue'
+import DrawingToolbar3D from './components/DrawingToolbar3D.vue'
 import {createPulseEffect} from "@/utils/olTool.js";
 
 const mapStore = useMapStore()
@@ -197,6 +205,7 @@ async function copyCoord() {
 
 let map2d = null
 let viewer3d = null
+const viewer3dReady = ref(false) // viewer3d 非响应式，用标志位驱动 3D 工具条挂载
 
 // ==================== 定位功能 ====================
 
@@ -271,6 +280,9 @@ async function init3DMap() {
   // 将图层树中勾选的在线服务同步到 3D 场景（含默认底图天地图影像）
   syncLayersToViewer(viewer3d, mapStore.layerTree)
 
+  // 3D 就绪，允许挂载 3D 绘制工具条
+  viewer3dReady.value = true
+
   // 监听相机变化
   viewer3d.camera.changed.addEventListener(() => {
     const center = get3DCenter(viewer3d)
@@ -338,6 +350,7 @@ async function handleMapToggle() {
       if (viewer3d) {
         destroyViewer(viewer3d)
         viewer3d = null
+        viewer3dReady.value = false
       }
     }
   } catch (err) {
