@@ -23,6 +23,36 @@
 
     <!-- 树形图层 -->
     <div class="layer-tree-container" v-show="!isCollapsed">
+      <!-- 导出区域 -->
+      <div class="layer-export-wrapper">
+        <el-select
+          v-model="exportCatalog"
+          size="small"
+          placeholder="选择导出范围"
+          class="export-select"
+          :popper-class="'export-select-popper'"
+        >
+          <el-option label="全部" value="all" />
+          <el-option
+            v-for="opt in catalogOptions"
+            :key="opt.id"
+            :label="opt.label"
+            :value="opt.id"
+          />
+        </el-select>
+        <button class="export-btn" :disabled="exporting" @click="handleExport">
+          <svg viewBox="0 0 16 16" width="14" height="14" class="export-btn-icon" v-if="!exporting">
+            <path d="M8 1.5 L8 10 M4.5 6.5 L8 10 L11.5 6.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2.5 12 L2.5 14 L13.5 14 L13.5 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <svg viewBox="0 0 16 16" width="14" height="14" class="export-btn-icon spinning" v-else>
+            <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+            <path d="M8 2 A6 6 0 0 1 14 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span>{{ exporting ? '导出中' : '导出' }}</span>
+        </button>
+      </div>
+
       <!-- 搜索过滤框 -->
       <div class="layer-search-wrapper">
         <svg class="layer-search-icon" viewBox="0 0 16 16" width="14" height="14">
@@ -146,11 +176,34 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useMapStore } from '../stores/mapStore'
+import { getCatalogOptions, exportLayersToExcel } from '../utils/exportLayers.js'
 
 const mapStore = useMapStore()
 const isCollapsed = ref(false)
 const treeRef = ref(null)
 const filterText = ref('')
+
+// ==================== 导出功能 ====================
+const exportCatalog = ref('all')
+const exporting = ref(false)
+const catalogOptions = computed(() => getCatalogOptions())
+
+async function handleExport() {
+  if (exporting.value) return
+  exporting.value = true
+  try {
+    let label = '全部'
+    if (exportCatalog.value !== 'all') {
+      const opt = catalogOptions.value.find(o => o.id === exportCatalog.value)
+      if (opt) label = opt.label
+    }
+    await exportLayersToExcel(exportCatalog.value, label)
+  } catch (e) {
+    console.error('[LayerTree] 导出失败:', e)
+  } finally {
+    exporting.value = false
+  }
+}
 
 // ==================== 透明度弹出面板状态 ====================
 const activeOpacityId = ref(null)
@@ -386,6 +439,95 @@ function onDocumentClick() {
   flex: 1;
   overflow-y: auto;
   padding: 8px 4px;
+}
+
+/* ===== 导出区域 ===== */
+.layer-export-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 4px 8px;
+  padding: 0 6px;
+  height: 34px;
+  background: rgba(64, 150, 255, 0.06);
+  border: 1px solid rgba(64, 150, 255, 0.15);
+  border-radius: 6px;
+  transition: border-color 0.2s;
+}
+
+.export-select {
+  flex: 1;
+  min-width: 0;
+}
+
+.export-select :deep(.el-select__wrapper) {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 0 8px 0 4px;
+  min-height: 28px;
+}
+
+.export-select :deep(.el-select__wrapper:hover) {
+  background: rgba(64, 150, 255, 0.08) !important;
+}
+
+.export-select :deep(.el-select__placeholder),
+.export-select :deep(.el-select__selected-item) {
+  color: rgba(193, 213, 240, 0.9) !important;
+  font-size: 12px;
+}
+
+.export-select :deep(.el-select__caret) {
+  color: rgba(139, 166, 204, 0.5) !important;
+}
+
+.export-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-shrink: 0;
+  height: 28px;
+  padding: 0 10px;
+  background: linear-gradient(135deg, rgba(64, 150, 255, 0.2) 0%, rgba(64, 150, 255, 0.1) 100%);
+  border: 1px solid rgba(64, 150, 255, 0.3);
+  border-radius: 5px;
+  color: #91caff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.export-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(64, 150, 255, 0.35) 0%, rgba(64, 150, 255, 0.15) 100%);
+  border-color: rgba(64, 150, 255, 0.5);
+  color: #bae0ff;
+  box-shadow: 0 0 8px rgba(64, 150, 255, 0.2);
+}
+
+.export-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.export-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.export-btn-icon {
+  flex-shrink: 0;
+}
+
+.export-btn-icon.spinning {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* ===== 搜索过滤框 ===== */
@@ -827,5 +969,36 @@ function onDocumentClick() {
 .layer-icon {
   width: 20px;
   height: 20px;
+}
+
+/* ===== 导出下拉框 popper 样式（teleport 到 body）===== */
+.export-select-popper.el-popper {
+  background: #0d2137 !important;
+  border: 1px solid rgba(64, 150, 255, 0.3) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+}
+
+.export-select-popper .el-select-dropdown__item {
+  color: rgba(193, 213, 240, 0.8) !important;
+  font-size: 12px;
+}
+
+.export-select-popper .el-select-dropdown__item:hover {
+  background: rgba(64, 150, 255, 0.12) !important;
+  color: #91caff !important;
+}
+
+.export-select-popper .el-select-dropdown__item.is-selected {
+  color: #4096FF !important;
+  font-weight: 600;
+}
+
+.export-select-popper .el-select-dropdown__item.is-selected:hover {
+  background: rgba(64, 150, 255, 0.15) !important;
+}
+
+.export-select-popper .el-popper__arrow::before {
+  background: #0d2137 !important;
+  border-color: rgba(64, 150, 255, 0.3) !important;
 }
 </style>
