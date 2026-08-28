@@ -398,7 +398,7 @@ const tools = [
   {
     type: 'BattleArrow',
     label: '军标',
-    icon: '<svg viewBox="0 0 20 20" width="20" height="20"><path d="M3 16 L 12 10 L 12 12 L 16 8 L 12 4 L 12 6 Z" fill="currentColor"/></svg>'
+    icon: '<svg viewBox="0 0 20 20" width="20" height="20"><path d="M10 1.5 L18 9 L13 9 L13 18.5 L7 18.5 L7 9 L2 9 Z" fill="currentColor"/></svg>'
   },
   {
     type: 'CircleOutline',
@@ -424,11 +424,11 @@ const featureRadius = ref(6)
 // 箭头参数
 const arrowScale = ref(1)
 const arrowHeadWidth = ref(3)
-// 军标箭头渐变参数
-const gradientStartColor = ref('#FF4444')
-const gradientEndColor = ref('#FFAA00')
-const gradientStartOpacity = ref(0.7)
-const gradientEndOpacity = ref(0.15)
+// 军标箭头渐变参数（默认按附件样式：尾→头由淡变深）
+const gradientStartColor = ref('#FFB3B3')
+const gradientEndColor = ref('#D32F2F')
+const gradientStartOpacity = ref(0.3)
+const gradientEndOpacity = ref(1)
 
 // 预设颜色（含红色和黄色）
 const presetColors = [
@@ -833,8 +833,92 @@ function catmullRomSmooth(points, numSegments) {
   return result
 }
 
-// ==================== 删除旧箭头相关函数 ====================
-// (replaced above)
+// ==================== 军标箭头几何函数 — 经典填充箭头（窄尾柄 + 宽三角头） ====================
+function buildBattleArrowPolygon(coords, params) {
+  if (!coords || coords.length < 2) return null
+
+  const scale = params.arrowScale || 1
+  const arrowHeadWidth = params.arrowHeadWidth || 6
+
+  // 形状比例（参考附件样式）：
+  //   三角头底宽 ≈ 1.8 × 箭杆宽度基准
+  //   箭杆（柄）宽度 ≈ 头底宽 × 0.42，形成明显的"翅膀"凹口
+  const baseW = arrowHeadWidth * scale * 1.8   // 三角头底部半宽
+  const stemW = baseW * 0.42                    // 箭杆半宽
+
+  // 计算路径总长与各段长度
+  const segLens = []
+  let totalLen = 0
+  for (let i = 1; i < coords.length; i++) {
+    const dx = coords[i][0] - coords[i - 1][0]
+    const dy = coords[i][1] - coords[i - 1][1]
+    const d = Math.sqrt(dx * dx + dy * dy)
+    segLens.push(d)
+    totalLen += d
+  }
+  if (totalLen < 1) totalLen = 1
+
+  // 头部占比：理想状态下约为 45%，但太短的路径会按 baseW 自动撑大
+  const headRatio = Math.min(0.45, Math.max(0.25, (baseW * 2.5) / totalLen))
+
+  // 沿路径均匀采样（保证三角头曲线顺滑，无论用户画几个点）
+  const minSamples = 24
+  const numSamples = Math.max(minSamples, Math.ceil(totalLen / 6))
+
+  function pointAtT(t) {
+    if (t <= 0) return [coords[0][0], coords[0][1]]
+    if (t >= 1) return [coords[coords.length - 1][0], coords[coords.length - 1][1]]
+    const target = t * totalLen
+    let acc = 0
+    for (let i = 0; i < coords.length - 1; i++) {
+      if (acc + segLens[i] >= target) {
+        const local = (target - acc) / segLens[i]
+        return [
+          coords[i][0] + (coords[i + 1][0] - coords[i][0]) * local,
+          coords[i][1] + (coords[i + 1][1] - coords[i][1]) * local
+        ]
+      }
+      acc += segLens[i]
+    }
+    return [coords[coords.length - 1][0], coords[coords.length - 1][1]]
+  }
+
+  function dirAtT(t) {
+    const eps = 1 / numSamples
+    const p1 = pointAtT(Math.max(0, t - eps))
+    const p2 = pointAtT(Math.min(1, t + eps))
+    const dx = p2[0] - p1[0]
+    const dy = p2[1] - p1[1]
+    const nl = Math.sqrt(dx * dx + dy * dy) || 1
+    return [-dy / nl, dx / nl]
+  }
+
+  const leftSide = []
+  const rightSide = []
+
+  for (let i = 0; i <= numSamples; i++) {
+    const t = i / numSamples
+    const p = pointAtT(t)
+    const [nx, ny] = dirAtT(t)
+
+    // 宽度曲线：柄 = 常数 stemW；头部区域由 baseW 线性收窄到 0（尖端）
+    let hw
+    if (t <= 1 - headRatio + 1e-6) {
+      hw = stemW
+    } else {
+      const localT = (t - (1 - headRatio)) / headRatio
+      hw = baseW * Math.max(0, 1 - localT)
+    }
+
+    leftSide.push([p[0] + nx * hw, p[1] + ny * hw])
+    rightSide.push([p[0] - nx * hw, p[1] - ny * hw])
+  }
+
+  const ring = [...leftSide, ...rightSide.reverse()]
+  ring.push(ring[0])
+
+  return new Polygon([ring])
+}
 
 // ==================== 椭圆几何函数 ====================
 function getEllipseGeometryFunction() {
@@ -1126,53 +1210,43 @@ function createWindArrowPreviewStyle(params, feature) {
 function createBattleArrowPreviewStyle(params, feature) {
   return new Style({
     renderer: (pixelCoordinates, state) => {
-      const geom = state.geometry || (feature && feature.getGeometry())
-      const coords = geom.getCoordinates()
-      if (!coords || coords.length < 2) return
+      if (!pixelCoordinates || pixelCoordinates.length < 4) return
 
-      const polygon = buildTaperedArrowPolygon(coords, params, false)
-      if (!polygon) return
-
-      const ring = polygon.getCoordinates()[0]
-      const transform = state.coordinateToPixelTransform
-      let pixelRing
-      if (transform) {
-        pixelRing = ring.map(c => [
-          transform[0] * c[0] + transform[2] * c[1] + transform[4],
-          transform[1] * c[0] + transform[3] * c[1] + transform[5]
-        ])
-      } else if (pixelCoordinates && pixelCoordinates.length >= 4) {
-        // 回退：在像素空间直接构建箭头多边形
-        const pixelPath = []
-        if (Array.isArray(pixelCoordinates[0])) {
-          for (let i = 0; i < pixelCoordinates.length; i++) {
-            pixelPath.push(pixelCoordinates[i])
-          }
-        } else {
-          for (let i = 0; i < pixelCoordinates.length; i += 2) {
-            pixelPath.push([pixelCoordinates[i], pixelCoordinates[i + 1]])
-          }
+      // 统一转为 [[x, y], ...] 像素坐标
+      const pixelPath = []
+      if (Array.isArray(pixelCoordinates[0])) {
+        for (let i = 0; i < pixelCoordinates.length; i++) {
+          pixelPath.push(pixelCoordinates[i])
         }
-        const pixelPolygon = buildTaperedArrowPolygon(pixelPath, params, false)
-        if (pixelPolygon) pixelRing = pixelPolygon.getCoordinates()[0]
+      } else {
+        for (let i = 0; i < pixelCoordinates.length; i += 2) {
+          pixelPath.push([pixelCoordinates[i], pixelCoordinates[i + 1]])
+        }
       }
-      if (!pixelRing) return
+      if (pixelPath.length < 2) return
+
+      // 在像素空间直接构造军标多边形：尺寸/比例稳定，不受地图投影影响
+      const polygon = buildBattleArrowPolygon(pixelPath, params)
+      if (!polygon) return
+      const pixelRing = polygon.getCoordinates()[0]
 
       const context = state.context
       if (!context) return
 
-      const sc = params.strokeColor || '#FF4444'
+      const sc = params.strokeColor || '#D32F2F'
       const sw = params.strokeWidth || 2
       const so = params.strokeOpacity !== undefined ? params.strokeOpacity : 1
-      const gs = params.gradientStartColor || '#FF4444'
-      const ge = params.gradientEndColor || '#FF8800'
-      const gso = params.gradientStartOpacity !== undefined ? params.gradientStartOpacity : 0.7
-      const geo = params.gradientEndOpacity !== undefined ? params.gradientEndOpacity : 0.15
+      // 起始色 = 箭尾（淡/透），结束色 = 箭头（深/饱和）
+      const gs = params.gradientStartColor || '#FFB3B3'
+      const ge = params.gradientEndColor || '#D32F2F'
+      const gso = params.gradientStartOpacity !== undefined ? params.gradientStartOpacity : 0.3
+      const geo = params.gradientEndOpacity !== undefined ? params.gradientEndOpacity : 1
 
-      const tail = pixelRing[0]
-      const headIdx = Math.floor(pixelRing.length / 2) + 1
-      const head = pixelRing[headIdx] || pixelRing[Math.floor(pixelRing.length / 2)] || pixelRing[pixelRing.length - 1]
-      const gradient = context.createLinearGradient(tail[0], tail[1], head[0], head[1])
+      // 渐变端点：路径起点（tail） → 路径终点（tip）
+      const tailPx = pixelPath[0]
+      const tipPx = pixelPath[pixelPath.length - 1]
+
+      const gradient = context.createLinearGradient(tailPx[0], tailPx[1], tipPx[0], tipPx[1])
       gradient.addColorStop(0, hexToRgba(gs, gso))
       gradient.addColorStop(1, hexToRgba(ge, geo))
 

@@ -4,23 +4,6 @@
     <header class="app-header">
       <div class="header-left">
         <div class="logo-icon">
-          <!-- <svg viewBox="0 0 32 32" width="28" height="28">
-            <defs>
-              <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#4096FF" />
-                <stop offset="100%" stop-color="#1677FF" />
-              </linearGradient>
-            </defs>
-            <circle cx="16" cy="16" r="14" fill="none" stroke="url(#logoGrad)" stroke-width="2" />
-            <ellipse cx="16" cy="14" rx="8" ry="5" fill="none" stroke="url(#logoGrad)" stroke-width="1.5" opacity="0.7" />
-            <line x1="16" y1="4" x2="16" y2="2" stroke="#4096FF" stroke-width="1.5" />
-            <line x1="16" y1="28" x2="16" y2="30" stroke="#4096FF" stroke-width="1.5" />
-            <circle cx="12" cy="13" r="1.5" fill="#69b1ff" />
-            <circle cx="20" cy="15" r="1.5" fill="#69b1ff" />
-            <circle cx="16" cy="18" r="1" fill="#69b1ff" />
-            <path d="M10 10 L8 8 M22 18 L24 20 M22 10 L24 8 M10 18 L8 20"
-              stroke="#69b1ff" stroke-width="0.8" opacity="0.5" />
-          </svg> -->
           <img class="layer-icon" src="./assets/image/layers/terrain.svg" alt="logo" width="20" height="20">
         </div>
         <h1 class="header-title">在线底图服务系统</h1>
@@ -149,6 +132,13 @@
           :map="map2d"
           class="draw-toolbar-panel"
         />
+
+        <!-- 3D 绘制工具栏（右侧，按钮与 2D 一致） -->
+        <DrawingToolbar3D
+          v-if="mapStore.mapMode === '3d' && viewer3dReady"
+          :viewer="viewer3d"
+          class="draw-toolbar-panel"
+        />
       </main>
     </div>
   </div>
@@ -163,10 +153,12 @@ import { useMap3D } from './composables/useMap3D'
 import LayerTree from './components/LayerTree.vue'
 import MapToggle from './components/MapToggle.vue'
 import DrawingToolbar from './components/DrawingToolbar.vue'
+import DrawingToolbar3D from './components/DrawingToolbar3D.vue'
+import {createPulseEffect} from "@/utils/olTool.js";
 
 const mapStore = useMapStore()
 const { initMap, switchBaseMap: switch2DBase, setLayerVisible, setLayerOpacity, addLayerToTop, removeDynamicLayer, hasDynamicLayer, createOverlayAndAddToTop, createWmtsOverlayAndAddToTop, syncLayerOrder, getCenter, getZoom, setView, flyToLocation, destroyMap } = useMap2D()
-const { initViewer, getCenter: get3DCenter, getApproximateZoom, flyTo, destroyViewer } = useMap3D()
+const { initViewer, syncLayersToViewer, BASE_MAP_IDS, getCenter: get3DCenter, getApproximateZoom, flyTo, destroyViewer } = useMap3D()
 
 const map2dRef = ref(null)
 const map3dRef = ref(null)
@@ -213,6 +205,7 @@ async function copyCoord() {
 
 let map2d = null
 let viewer3d = null
+const viewer3dReady = ref(false) // viewer3d 非响应式，用标志位驱动 3D 工具条挂载
 
 // ==================== 定位功能 ====================
 
@@ -245,7 +238,9 @@ async function init2DMap() {
     zoom: mapStore.mapZoom,
     baseMap: mapStore.activeBaseMap
   })
-
+  window._map = map2d
+  // createPulseEffect(map2d,[102.671458, 25.012298])
+  // createPulseEffect(map2d,[11430099.806702323, 2877020.183828798])
   syncLayersToMap(map2d)
 
   // 监听视角变化（仅存 store 中心/缩放，不再显示中心坐标）
@@ -266,6 +261,7 @@ async function init2DMap() {
   // 地图点击锁定拾取坐标
   map2d.on('click', (evt) => {
     if (mapStore.isDrawingActive) return
+    console.log(evt.coordinate)
     const coord = toLonLat(evt.coordinate)
     pickedCoord.value = [coord[0], coord[1]]
   })
@@ -280,6 +276,12 @@ async function init3DMap() {
     center: mapStore.mapCenter,
     zoom: mapStore.mapZoom
   })
+
+  // 将图层树中勾选的在线服务同步到 3D 场景（含默认底图天地图影像）
+  syncLayersToViewer(viewer3d, mapStore.layerTree)
+
+  // 3D 就绪，允许挂载 3D 绘制工具条
+  viewer3dReady.value = true
 
   // 监听相机变化
   viewer3d.camera.changed.addEventListener(() => {
@@ -296,6 +298,13 @@ function switchBaseMap(mapId) {
   mapStore.setActiveBaseMap(mapId)
   if (map2d) {
     switch2DBase(map2d, mapId)
+  }
+  // 3D 模式下：将底图互斥可见性同步到图层树（watch 会自动同步 3D 场景）
+  if (viewer3d && mapStore.mapMode === '3d') {
+    const layerId = mapId === 'osm' ? 'osm_vector' : mapId
+    BASE_MAP_IDS.forEach(id => {
+      mapStore.setLayerVisibility(id, id === layerId)
+    })
   }
 }
 
@@ -341,6 +350,7 @@ async function handleMapToggle() {
       if (viewer3d) {
         destroyViewer(viewer3d)
         viewer3d = null
+        viewer3dReady.value = false
       }
     }
   } catch (err) {
@@ -399,9 +409,13 @@ function syncLayersToMap(map) {
   syncLayerOrder(map, mapStore.layerTree)
 }
 
-// 监听图层树变化，同步到地图图层显隐 + 层级顺序 + 透明度
+// 监听图层树变化，按当前模式同步到对应地图（2D 图层显隐+层级+透明度 / 3D 在线服务图层）
 watch(() => mapStore.layerTree, () => {
-  syncLayersToMap(map2d)
+  if (mapStore.mapMode === '2d') {
+    syncLayersToMap(map2d)
+  } else {
+    syncLayersToViewer(viewer3d, mapStore.layerTree)
+  }
 }, { deep: true })
 
 // ==================== 生命周期 ====================

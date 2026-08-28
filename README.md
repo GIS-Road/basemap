@@ -46,18 +46,28 @@ basemap/
         └── layers.js             # 图层配置
 ```
 ## 项目效果
-![alt text](<src/assets/效果图/image (1).png>) 
 
-![alt text](<src/assets/效果图/image (2).png>) 
+![alt text](src/assets/效果图/simple-line.png)
 
-![alt text](<src/assets/效果图/image (3).png>) 
+![alt text](src/assets/效果图/arrow-line.png) 
 
-![alt text](<src/assets/效果图/image (4).png>) 
+![alt text](src/assets/效果图/basemap-vector.png) 
 
-![alt text](src/assets/效果图/image.png)
+![alt text](src/assets/效果图/basemap-image.png) 
 
+![alt text](src/assets/效果图/circle.png) 
 
-![alt text](src/assets/效果图/image1.png)
+![alt text](src/assets/效果图/rectangle.png) 
+
+![alt text](src/assets/效果图/arrow.png) 
+
+![alt text](src/assets/效果图/3d-image.png) 
+
+![alt text](src/assets/效果图/3d-image1.png) 
+
+![alt text](src/assets/效果图/3d-terrain.png) 
+
+![alt text](src/assets/效果图/3d-vector.png)
 ## 项目特点
 - 二三维一体化应用
 - 在线底图服务
@@ -77,13 +87,19 @@ npm run dev
 npm run build
 ```
 
+## 项目地址
+在线访问地址：`https://gis-road.github.io/basemap/`
+
 
 ## 联系作者
 微信公众号：**GIS之路**
 
+![alt text](src/assets/image/公众号.png)
+
 个人微信：`shanhaigis`
 
-![alt text](src/assets/image/公众号联系方式.png)
+![alt text](src/assets/image/个人微信.png)
+
 
 
 
