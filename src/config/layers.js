@@ -385,17 +385,6 @@ const layers = [
         "zoom": ""
       },
       {
-        "id": "Terrain_background_layer_by_EOX",
-        "label": "Terrain_background_layer_by_EOX",
-        "name": "Terrain_background_layer_by_EOX",
-        "url": `https://tiles.emodnet-bathymetry.eu/2020/baselayer/web_mercator/{z}/{x}/{y}.png`,
-        "group": "terrain",
-        "type": "terrain",
-        "serviceType": "xyz",
-        "visible": false,
-        "zoom": ""
-      },
-      {
         "id": "terrain_google_pure_landuse",
         "label": "谷歌地形图_纯图_土地利用",
         "name": "谷歌地形图_纯图_土地利用",
