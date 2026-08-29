@@ -622,13 +622,14 @@ const layers = [
     "type": "catalog",
     "children": [
       {
-        "id": "Sentinel_2",
-        "label": "夜间灯光_Sentinel2",
-        "name": "Sentinel_2",
+        "id": "blackmarble_3857",
+        "label": "夜间灯光_BlackMarble",
+        "name": "blackmarble_3857",
         "url": "https://tiles.maps.eox.at/wmts/1.0.0/WMTSCapabilities.xml",
         "group": "light",
         "type": "wmts",
         "serviceType": "wmts",
+        "matrixSet": "g",
         "visible": false,
         "zoom": ""
       },

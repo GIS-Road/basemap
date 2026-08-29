@@ -334,9 +334,21 @@ export function useMap2D() {
         return
       }
 
-      // 自动选择 matrixSet：优先 EPSG:3857 / GoogleMapsCompatible / WGS84
+      // 校验图层是否存在于 Capabilities 中（不存在的图层名会导致 optionsFromCapabilities 抛错/返回空）
       const matrixSets = caps.Contents?.TileMatrixSet || []
+      const targetLayer = (caps.Contents?.Layer || []).find(l => l.Identifier === layerName)
+      if (!targetLayer) {
+        console.warn(`[WMTS] Capabilities 中未找到图层 "${layerName}"，请检查配置的 name 是否正确: ${capabilitiesUrl}`)
+        return
+      }
+
+      // 自动选择 matrixSet：优先目标图层自身声明的 TileMatrixSetLink（最权威，
+      // 避免全局匹配到的矩阵集并非该图层支持导致返回空），其次显式指定，最后回退通用匹配
+      const layerMatrixSets = (targetLayer.TileMatrixSetLink || [])
+        .map(l => l.TileMatrixSet)
+        .filter(tms => matrixSets.some(ms => ms.Identifier === tms))
       const preferredMatrixSet = options.matrixSet
+        || layerMatrixSets[0]
         || matrixSets.find(ms => ms.Identifier === 'EPSG:3857')?.Identifier
         || matrixSets.find(ms => ms.Identifier === 'GoogleMapsCompatible')?.Identifier
         || matrixSets.find(ms => ms.Identifier?.includes('3857'))?.Identifier
