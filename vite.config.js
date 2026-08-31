@@ -6,12 +6,14 @@ import path from "path"
 export default defineConfig({
   plugins: [
     vue(),
-    cesium()
+    cesium({
+      baseUrl: 'cesium',
+    })
   ],
   base: "/basemap/",
   build: {
     // 应用输出路径，与Nginx配置一致
-    // outDir: "basemap",
+    outDir: "basemap",
     // 静态资源存放路径
     assetsDir: "assets",
   },

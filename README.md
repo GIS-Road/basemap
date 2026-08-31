@@ -1,16 +1,18 @@
-# 在线底图服务系统
+# 🗺️ 在线底图服务系统
 
 > 这是一个Web项目，旨在打造全网最全在线底图整合系统。收集整理地球上所有的在线底图、标注、影像、矢量图层以及地形数据，构建二三维一体化应用。
 
 
 
-## 技术框架
+## 🛠️ 技术框架
 纯前端项目
 
-使用 `Vue3+OpenLayers+Cesium` 进行构建
+技术包： `Vue3 + OpenLayers + Cesium` 
+
+构建工具：`Vite`
 
 
-## 项目结构
+## 📂 项目结构
 ```
 basemap/
 ├── index.html                    # 入口 HTML
@@ -45,7 +47,7 @@ basemap/
     └── config/
         └── layers.js             # 图层配置
 ```
-## 项目效果
+## 🖼️ 项目效果
 
 ![alt text](src/assets/效果图/simple-line.png)
 
@@ -68,12 +70,12 @@ basemap/
 ![alt text](src/assets/效果图/3d-terrain.png) 
 
 ![alt text](src/assets/效果图/3d-vector.png)
-## 项目特点
+## ✨ 项目特点
 - 二三维一体化应用
 - 在线底图服务
 - 个性化绘制和编辑
 
-## 如何运行
+## 🚀 如何运行
 `node` 版本要求22+
 
 项目运行
@@ -87,11 +89,13 @@ npm run dev
 npm run build
 ```
 
-## 项目地址
-在线访问地址：`https://gis-road.github.io/basemap/`
+## 🔗 项目地址
 
+在线访问：https://gis-road.github.io/basemap/
 
-## 联系作者
+GitHub 仓库：https://github.com/gis-road/basemap
+
+## 📮 联系作者
 微信公众号：**GIS之路**
 
 ![alt text](src/assets/image/公众号.png)
