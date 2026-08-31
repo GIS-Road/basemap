@@ -7,7 +7,6 @@ import './assets/styles.css'
 
 import "ol/ol.css"
 
-
 const app = createApp(App)
 app.use(createPinia())
 app.use(ElementPlus)

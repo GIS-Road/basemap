@@ -37,8 +37,8 @@ jobs:
       - name: 上传构建产物
         uses: actions/upload-pages-artifact@v3
         with:
-          # path: './dist'
-          path: './basemap'
+          path: './dist'
+          # path: './basemap'
       - name: 部署到 GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
