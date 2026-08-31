@@ -11,7 +11,7 @@ export default defineConfig({
   base: "/basemap/",
   build: {
     // 应用输出路径，与Nginx配置一致
-    // outDir: "basemap",
+    outDir: "basemap",
     // 静态资源存放路径
     assetsDir: "assets",
   },
