@@ -5,12 +5,17 @@
 
 
 ## 🛠️ 技术框架
-纯前端项目
+纯前端项目，使用流行的前端库进行打造。
 
 技术包： `Vue3 + OpenLayers + Cesium` 
 
 构建工具：`Vite`
 
+## 🔗 项目地址
+
+在线访问：https://gis-road.github.io/basemap/
+
+GitHub 仓库：https://github.com/gis-road/basemap
 
 ## 📂 项目结构
 ```
@@ -88,12 +93,6 @@ npm run dev
 ```
 npm run build
 ```
-
-## 🔗 项目地址
-
-在线访问：https://gis-road.github.io/basemap/
-
-GitHub 仓库：https://github.com/gis-road/basemap
 
 ## 📮 联系作者
 微信公众号：**GIS之路**
