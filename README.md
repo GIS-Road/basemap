@@ -66,9 +66,9 @@ basemap/
 |:---:|:---:|:---:|
 | <img src="src/assets/效果图/arrow.png" alt="军事箭头" width="280"> | <img src="src/assets/效果图/3d-image.png" alt="3D影像" width="280"> | <img src="src/assets/效果图/3d-image1.png" alt="3D影像" width="280"> |
 
-| 3D地形 | ESRI地形 | ESRI影像 |
+| 3D地形 | ESRI地形 | 天地图地形影像 |
 |:---:|:---:|:---:|
-| <img src="src/assets/效果图/3d-terrain.png" alt="3D地形" width="280"> | <img src="src/assets/效果图/3d-vector.png" alt="ESRI地形" width="280"> | <img src="src/assets/效果图/3d-image1.png" alt="ESRI影像" width="280"> |
+| <img src="src/assets/效果图/3d-terrain.png" alt="3D地形" width="280"> | <img src="src/assets/效果图/3d-vector.png" alt="ESRI地形" width="280"> | <img src="src/assets/效果图/3d-image1.png" alt="天地图地形影像" width="280"> |
 
 ## ✨ 项目特点
 - 二三维一体化应用
@@ -99,7 +99,7 @@ npm run build
 ![alt text](src/assets/image/个人微信.png)
 
 
+# 📋 版权说明
 
-
-
+本系统所使用的地图服务内容均来自于网络公开整理，版权归原作者所有。
 
