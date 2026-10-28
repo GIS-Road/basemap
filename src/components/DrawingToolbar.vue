@@ -2179,11 +2179,41 @@ function applyBattleArrowStyle(feature, params) {
 }
 
 // ==================== 停用工具 ====================
+// 兜底清理：移除地图上所有绘制类交互（Draw / Select / Modify）。
+// 正常切换只会存在一个，此函数用于清除热更新或旧组件实例遗留的"幽灵"交互，
+// 避免出现"取消标注后点击地图仍会落标注"这类多个绘制交互并存的问题。
+function purgeDrawingInteractions() {
+  if (!props.map) return
+  props.map.getInteractions().getArray().slice().forEach(interaction => {
+    if (
+      interaction instanceof Draw ||
+      interaction instanceof Select ||
+      interaction instanceof Modify
+    ) {
+      props.map.removeInteraction(interaction)
+    }
+  })
+  drawInteraction = null
+  selectInteraction = null
+  modifyInteraction = null
+  sketchLayer = null
+}
+
 function deactivateTool() {
   if (drawInteraction && props.map) {
+    // 先中止绘制：清掉跟随鼠标移动的草图（含文字标注的预览文字），
+    // 再移除交互，并把草图图层从地图上强制摘除，确保任何取消路径都干净
+    try {
+      drawInteraction.abortDrawing()
+    } catch (e) {
+      /* 忽略中止时的异常 */
+    }
     props.map.removeInteraction(drawInteraction)
     drawInteraction = null
-    sketchLayer = null
+    if (sketchLayer) {
+      sketchLayer.setMap(null)
+      sketchLayer = null
+    }
   }
   if (selectInteraction && props.map) {
     selectInteraction.getFeatures().clear()
@@ -2194,6 +2224,9 @@ function deactivateTool() {
     props.map.removeInteraction(modifyInteraction)
     modifyInteraction = null
   }
+
+  // 兜底：清掉一切残留的绘制类交互（幽灵交互清理）
+  purgeDrawingInteractions()
 
   selectedFeature.value = null
   isSelectPicked.value = false
@@ -2411,6 +2444,8 @@ onMounted(() => {
   if (props.map && !vectorLayer) {
     initVectorLayer()
   }
+  // 组件挂载时清理地图上遗留的绘制类交互（热更新后旧实例的残留）
+  purgeDrawingInteractions()
   document.addEventListener('keydown', handleKeydown)
 })
 

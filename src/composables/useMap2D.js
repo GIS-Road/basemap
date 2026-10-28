@@ -115,6 +115,7 @@ export function useMap2D() {
     // 设置初始底图
     switchBaseMap(map, baseMap)
     mapInstance.value = map
+    window.olMap = map
 
     return map
   }
