@@ -53,7 +53,7 @@
               type="range"
               class="range-input"
               v-model.number="strokeWidth"
-              min="1" max="10" step="0.5"
+              min="1" max="20" step="0.5"
               @input="onStyleChange"
             />
             <span class="range-value">{{ strokeWidth }}px</span>
@@ -137,6 +137,84 @@
           </div>
         </template>
 
+        <!-- ===== 自由绘制（线要素） ===== -->
+        <template v-if="canFreehand">
+          <div class="style-separator freehand-sep">自由绘制</div>
+          <div class="freehand-hint">按住 Shift + 左键拖动即可自由绘制，松开左键完成</div>
+        </template>
+
+        <!-- ===== 边线描边（外边线） ===== -->
+        <div class="style-separator outline-sep" v-if="hasStroke">边线描边</div>
+
+        <div class="style-row" v-if="hasStroke">
+          <label class="style-label">启用描边</label>
+          <div class="style-control">
+            <button
+              class="switch-toggle"
+              :class="{ active: outlineEnabled }"
+              @click="toggleOutline"
+              :title="outlineEnabled ? '点击关闭描边' : '点击开启描边'"
+            >
+              <span class="switch-knob"></span>
+            </button>
+            <span class="switch-text">{{ outlineEnabled ? '已开启' : '已关闭' }}</span>
+          </div>
+        </div>
+
+        <template v-if="outlineEnabled && hasStroke">
+          <div class="style-row">
+            <label class="style-label">描边颜色</label>
+            <div class="style-control">
+              <input
+                type="color"
+                class="color-input"
+                v-model="outlineColor"
+                @input="onStyleChange"
+              />
+              <span class="color-value">{{ outlineColor }}</span>
+            </div>
+            <div class="preset-colors">
+              <button
+                v-for="c in presetColors"
+                :key="'o-' + c"
+                class="preset-color-swatch"
+                :class="{ active: outlineColor.toUpperCase() === c.toUpperCase() }"
+                :style="{ background: c }"
+                @click="selectPresetColor(c, 'outline')"
+                :title="c"
+              ></button>
+            </div>
+          </div>
+
+          <div class="style-row">
+            <label class="style-label">描边宽度</label>
+            <div class="style-control">
+              <input
+                type="range"
+                class="range-input"
+                v-model.number="outlineWidth"
+                min="0.5" max="12" step="0.5"
+                @input="onStyleChange"
+              />
+              <span class="range-value">{{ outlineWidth }}px</span>
+            </div>
+          </div>
+
+          <div class="style-row">
+            <label class="style-label">描边透明度</label>
+            <div class="style-control">
+              <input
+                type="range"
+                class="range-input"
+                v-model.number="outlineOpacity"
+                min="0" max="1" step="0.05"
+                @input="onStyleChange"
+              />
+              <span class="range-value">{{ Math.round(outlineOpacity * 100) }}%</span>
+            </div>
+          </div>
+        </template>
+
         <!-- 填充颜色 -->
         <div class="style-row" v-if="hasFill">
           <label class="style-label">填充颜色</label>
@@ -201,7 +279,7 @@
                 type="range"
                 class="range-input"
                 v-model.number="arrowScale"
-                min="0.5" max="5" step="0.1"
+                min="0.5" max="20" step="0.5"
                 @input="onStyleChange"
               />
               <span class="range-value">{{ arrowScale }}x</span>
@@ -214,7 +292,7 @@
                 type="range"
                 class="range-input"
                 v-model.number="arrowHeadWidth"
-                min="1" max="10" step="0.5"
+                min="1" max="20" step="0.5"
                 @input="onStyleChange"
               />
               <span class="range-value">{{ arrowHeadWidth }}px</span>
@@ -342,6 +420,9 @@ import {
   Cartesian2,
   Cartographic,
   Color,
+  Material,
+  Event,
+  CameraEventType,
   PolylineDashMaterialProperty,
   ImageMaterialProperty,
   Math as CesiumMath
@@ -423,6 +504,11 @@ const dashGap = ref(4)
 const fillColor = ref('#4096FF')
 const fillOpacity = ref(0.15)
 const featureRadius = ref(6)
+// 描边（外边线）参数
+const outlineEnabled = ref(false)
+const outlineColor = ref('#FFFFFF')
+const outlineWidth = ref(2)
+const outlineOpacity = ref(1)
 // 箭头参数
 const arrowScale = ref(1)
 const arrowHeadWidth = ref(3)
@@ -449,8 +535,15 @@ const presetColors = [
 function selectPresetColor(color, target) {
   if (target === 'stroke') strokeColor.value = color
   else if (target === 'fill') fillColor.value = color
+  else if (target === 'outline') outlineColor.value = color
   else if (target === 'gradientStart') gradientStartColor.value = color
   else if (target === 'gradientEnd') gradientEndColor.value = color
+  onStyleChange()
+}
+
+// 开关切换
+function toggleOutline() {
+  outlineEnabled.value = !outlineEnabled.value
   onStyleChange()
 }
 
@@ -491,10 +584,10 @@ const panelTitle = computed(() => {
   return '绘制样式设置'
 })
 
-// 是否有边线（所有要素除纯点外都有边线）
+// 是否有边线（所有要素除纯点外都有边线；圆形按线要素渲染，同样支持边线/描边）
 const hasStroke = computed(() => {
   const t = currentFeatureType.value
-  return t !== 'Point' && t !== 'CircleOutline'
+  return t !== 'Point'
 })
 
 // 是否是箭头类型
@@ -526,6 +619,9 @@ const radiusLabel = computed(() => {
   return '半径'
 })
 
+// 是否支持自由绘制（仅线要素）
+const canFreehand = computed(() => currentFeatureType.value === 'LineString')
+
 // ==================== 绘制要素管理 ====================
 // 逻辑要素：{ id, drawType, styleParams, coords:[[lng,lat,h]], entity, fillEntity, strokeEntity, ringFn, ... }
 const features = ref([])
@@ -536,6 +632,10 @@ let handler = null
 let drawState = null
 let clickTimer = null
 let savedDepthTest = false
+
+// 自由绘制 / 相机交互状态
+let skipClick = false              // 自由绘制结束后忽略随之而来的 click
+let savedCameraTypes = null        // 绘制时临时改写的相机输入配置
 
 // 预览实体
 let previewLine = null
@@ -619,17 +719,174 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
-// 创建边线材质（实线 = Color，虚线 = PolylineDashMaterialProperty）
+// ==================== 边线描边材质 ====================
+// 自定义 Fabric 材质：在实线/虚线基础上叠加"外边线描边"（每侧固定像素宽度，与 2D 绘制一致）。
+// 用单一材质一次绘制，避免双层线叠加导致同位置深度冲突（描边把主线盖掉）。
+const OUTLINE_DASH_TYPE = 'PolylineOutlineDash'
+let outlineDashRegistered = false
+
+const OUTLINE_DASH_SOURCE = `
+uniform vec4 color;
+uniform vec4 gapColor;
+uniform vec4 outlineColor;
+uniform float outlineWidth;
+uniform float dashLength;
+uniform float dashPattern;
+
+in float v_width;
+in float v_polylineAngle;
+
+const float maskLength = 16.0;
+
+mat2 rotate(float rad) {
+    float c = cos(rad);
+    float s = sin(rad);
+    return mat2(c, s, -s, c);
+}
+
+czm_material czm_getMaterial(czm_materialInput materialInput)
+{
+    czm_material material = czm_getDefaultMaterial(materialInput);
+    vec2 st = materialInput.st;
+
+    // 描边区判定（与 Cesium 内置 PolylineOutline 一致的像素宽度算法）
+    float halfInteriorWidth = 0.5 * (v_width - outlineWidth) / v_width;
+    float b = step(0.5 - halfInteriorWidth, st.t);
+    b *= 1.0 - step(0.5 + halfInteriorWidth, st.t);
+
+    float d1 = abs(st.t - (0.5 - halfInteriorWidth));
+    float d2 = abs(st.t - (0.5 + halfInteriorWidth));
+    float dist = min(d1, d2);
+
+    vec4 currentColor = mix(outlineColor, color, b);
+
+    // 虚线掩码（间隙整体透明，描边随虚线断开）
+    bool isDashed = dashPattern < 65535.0;
+    if (isDashed) {
+        vec2 pos = rotate(v_polylineAngle) * gl_FragCoord.xy;
+        float dashPosition = fract(pos.x / (dashLength * czm_pixelRatio));
+        float maskIndex = floor(dashPosition * maskLength);
+        float maskTest = floor(dashPattern / pow(2.0, maskIndex));
+        if (mod(maskTest, 2.0) < 1.0) {
+            currentColor = gapColor;
+        }
+    } else {
+        currentColor = czm_antialias(outlineColor, color, currentColor, dist);
+    }
+
+    if (currentColor.a < 0.005) {
+        discard;
+    }
+
+    vec4 outColor = czm_gammaCorrect(currentColor);
+    if (isDashed) {
+        // 与 Cesium 内置 PolylineDash 一致：虚线走 emission，避免参与光照
+        material.diffuse = vec3(0.0);
+        material.emission = outColor.rgb;
+    } else {
+        material.diffuse = outColor.rgb;
+    }
+    material.alpha = outColor.a;
+    return material;
+}
+`
+
+function ensureOutlineDashMaterial() {
+  if (outlineDashRegistered) return true
+  try {
+    Material._materialCache.addMaterial(OUTLINE_DASH_TYPE, {
+      fabric: {
+        type: OUTLINE_DASH_TYPE,
+        uniforms: {
+          color: Color.WHITE,
+          gapColor: new Color(0, 0, 0, 0),
+          outlineColor: Color.BLACK,
+          outlineWidth: 1.0,
+          dashLength: 16.0,
+          dashPattern: 65535.0
+        },
+        source: OUTLINE_DASH_SOURCE
+      },
+      translucent: true
+    })
+    outlineDashRegistered = true
+    return true
+  } catch (err) {
+    console.warn('[DrawingToolbar3D] 描边材质注册失败，将忽略描边:', err)
+    return false
+  }
+}
+
+// 描边（+虚线）材质属性
+class OutlineDashMaterialProperty {
+  constructor(options = {}) {
+    this._definitionChanged = new Event()
+    this._color = options.color
+    this._gapColor = options.gapColor || new Color(0, 0, 0, 0)
+    this._outlineColor = options.outlineColor
+    this._outlineWidth = options.outlineWidth ?? 1
+    this._dashLength = options.dashLength ?? 16
+    this._dashPattern = options.dashPattern ?? 0xFFFF
+  }
+
+  get isConstant() { return true }
+  get definitionChanged() { return this._definitionChanged }
+  getType() { return OUTLINE_DASH_TYPE }
+
+  getValue(time, result) {
+    result = result || {}
+    result.color = this._color
+    result.gapColor = this._gapColor
+    result.outlineColor = this._outlineColor
+    result.outlineWidth = this._outlineWidth
+    result.dashLength = this._dashLength
+    result.dashPattern = this._dashPattern
+    return result
+  }
+
+  equals(other) {
+    return this === other
+  }
+}
+
+// 线宽（开启描边时两侧各加 outlineWidth）
+function lineWidthOf(p) {
+  const base = p.strokeWidth || 2
+  if (!p.outlineEnabled) return base
+  return base + (p.outlineWidth || 0) * 2
+}
+
+// 创建边线材质（实线 = Color，虚线 = PolylineDashMaterialProperty，可叠加描边）
 function createStrokeMaterial(p) {
   const color = cssColor(p.strokeColor || '#4096FF', p.strokeOpacity ?? 1)
-  if (p.strokeDashType === 'dashed') {
+  const dashed = p.strokeDashType === 'dashed'
+
+  let dashTotal = 16
+  let pattern = 0xFFFF
+  if (dashed) {
     const dash = p.dashLength || 8
     const gap = p.dashGap || 4
-    const total = Math.max(1, dash + gap)
-    const ratio = Math.min(1, dash / total)
+    dashTotal = Math.max(1, dash + gap)
+    const ratio = Math.min(1, dash / dashTotal)
     const n = Math.round(16 * ratio)
-    const pattern = n <= 0 ? 0 : n >= 16 ? 0xFFFF : ((0xFFFF << (16 - n)) & 0xFFFF)
-    return new PolylineDashMaterialProperty({ color, dashLength: total, dashPattern: pattern })
+    pattern = n <= 0 ? 0 : n >= 16 ? 0xFFFF : ((0xFFFF << (16 - n)) & 0xFFFF)
+  }
+
+  // 描边：一次绘制主线 + 外侧描边
+  if (p.outlineEnabled && (p.outlineWidth || 0) > 0 && ensureOutlineDashMaterial()) {
+    return new OutlineDashMaterialProperty({
+      color,
+      gapColor: new Color(0, 0, 0, 0),
+      outlineColor: cssColor(p.outlineColor || '#FFFFFF', p.outlineOpacity ?? 1),
+      // 材质内 outlineWidth 为总描边宽度，故乘 2 表示"每侧"宽度
+      outlineWidth: (p.outlineWidth || 0) * 2,
+      dashLength: dashTotal,
+      dashPattern: dashed ? pattern : 0xFFFF
+    })
+  }
+
+  if (dashed) {
+    return new PolylineDashMaterialProperty({ color, dashLength: dashTotal, dashPattern: pattern })
   }
   return color
 }
@@ -870,6 +1127,10 @@ function getCurrentParams() {
     dashGap: dashGap.value,
     fillColor: fillColor.value,
     fillOpacity: fillOpacity.value,
+    outlineEnabled: outlineEnabled.value,
+    outlineColor: outlineColor.value,
+    outlineWidth: outlineWidth.value,
+    outlineOpacity: outlineOpacity.value,
     radius: featureRadius.value,
     arrowScale: arrowScale.value,
     arrowHeadWidth: arrowHeadWidth.value,
@@ -901,8 +1162,10 @@ function applyFeatureStyle(f) {
   if (t === 'LineString') {
     f.strokeEntity.polyline = {
       positions: toCartesians(f.coords, h),
-      width: p.strokeWidth,
-      material: createStrokeMaterial(p)
+      width: lineWidthOf(p),
+      material: createStrokeMaterial(p),
+      // 贴地：避免受 depthTestAgainstTerrain 影响被地形遮挡（线在地图上不显示）
+      clampToGround: true
     }
     return
   }
@@ -911,8 +1174,10 @@ function applyFeatureStyle(f) {
     // 杆身
     f.strokeEntity.polyline = {
       positions: toCartesians(f.coords, h),
-      width: p.strokeWidth,
-      material: createStrokeMaterial(p)
+      width: lineWidthOf(p),
+      material: createStrokeMaterial(p),
+      // 贴地：避免被地形遮挡
+      clampToGround: true
     }
     // 三角箭头尖
     const local = toLocalMeters(f.coords)
@@ -920,7 +1185,9 @@ function applyFeatureStyle(f) {
     const headGeo = fromLocalMeters(local, head, f.coords[f.coords.length - 1][2] ?? h)
     f.fillEntity.polygon = {
       hierarchy: toCartesians(headGeo, h),
-      material: cssColor(p.strokeColor || '#4096FF', p.strokeOpacity ?? 1)
+      material: cssColor(p.strokeColor || '#4096FF', p.strokeOpacity ?? 1),
+      // 贴地：箭头面随地形显示，不被遮挡
+      clampToGround: true
     }
     return
   }
@@ -941,14 +1208,18 @@ function applyFeatureStyle(f) {
     }
     f.fillEntity.polygon = {
       hierarchy: cartesians,
-      material
+      material,
+      // 贴地：面要素随地形显示，不被遮挡
+      clampToGround: true
     }
   }
 
   f.strokeEntity.polyline = {
     positions: [...cartesians, cartesians[0]],
-    width: p.strokeWidth,
-    material: createStrokeMaterial(p)
+    width: lineWidthOf(p),
+    material: createStrokeMaterial(p),
+    // 贴地：面边线随地形显示，不被遮挡
+    clampToGround: true
   }
 }
 
@@ -1077,8 +1348,10 @@ function setPreviewLine(coords, params, h) {
   previewLine.show = true
   previewLine.polyline = {
     positions: toCartesians(coords, h),
-    width: params.strokeWidth,
-    material: createStrokeMaterial(params)
+    width: lineWidthOf(params),
+    material: createStrokeMaterial(params),
+    // 贴地：绘制预览线随地形显示，不被遮挡
+    clampToGround: true
   }
 }
 
@@ -1087,7 +1360,9 @@ function setPreviewFill(coords, material, h) {
   previewFill.show = true
   previewFill.polygon = {
     hierarchy: toCartesians(coords, h),
-    material
+    material,
+    // 贴地：绘制预览面随地形显示，不被遮挡
+    clampToGround: true
   }
 }
 
@@ -1106,9 +1381,206 @@ function cleanupPreview() {
   }
 }
 
+// ==================== 绘制时的相机交互 ====================
+// 绘制需要独占左键（拖拽形状 / 自由绘制）时，把"旋转平移"临时交给中键，
+// 滚轮与右键缩放保持可用，保证绘制过程中依然能调整视角。
+function setDrawCameraMode() {
+  if (!viewer || viewer.isDestroyed()) return
+  const controller = viewer.scene.screenSpaceCameraController
+  if (!controller || savedCameraTypes) return
+  const tiltTypes = Array.isArray(controller.tiltEventTypes)
+    ? controller.tiltEventTypes.slice()
+    : [controller.tiltEventTypes]
+  savedCameraTypes = {
+    rotateEventTypes: controller.rotateEventTypes,
+    tiltEventTypes: controller.tiltEventTypes
+  }
+  controller.rotateEventTypes = CameraEventType.MIDDLE_DRAG
+  controller.tiltEventTypes = tiltTypes.filter(t => t !== CameraEventType.MIDDLE_DRAG)
+}
+
+function restoreDrawCameraMode() {
+  if (!savedCameraTypes) return
+  const valid = viewer && !viewer.isDestroyed()
+  if (valid && viewer.scene && viewer.scene.screenSpaceCameraController) {
+    const controller = viewer.scene.screenSpaceCameraController
+    controller.rotateEventTypes = savedCameraTypes.rotateEventTypes
+    controller.tiltEventTypes = savedCameraTypes.tiltEventTypes
+  }
+  savedCameraTypes = null
+}
+
+// ==================== 自由绘制（Freehand） ====================
+// 与 OpenLayers Draw(freehand: true) 一致：按住 Shift + 鼠标左键拖动，沿轨迹连续采样成线，
+// 松开左键立即完成，不需要逐点单击、也不需要双击。默认可用，无需任何开关。
+//
+// 实现说明（关键）：这里不使用 Cesium 的 ScreenSpaceEventHandler，而用原生 Pointer 事件，
+// 并在 window 的捕获阶段监听。原因：
+//   1) Cesium 的相机控制器比业务 handler 先注册，mousedown 会先被相机拿到，
+//      导致拖动时地球跟着旋转、轨迹被破坏；
+//   2) 在 window 捕获阶段可以抢在相机处理之前把这个手势的左键旋转改到中键；
+//   3) 原生事件自带 shiftKey / button，判断条件更准确。
+const FREEHAND_SAMPLE_DIST = 2.5   // 采样间隔（屏幕像素）
+const FREEHAND_DRAG_THRESHOLD = 3  // 超过该距离才算"拖动"，否则视为单击
+
+let freehandActive = false     // 是否处于自由绘制手势中
+let freehandDragging = false   // 本次手势是否发生了拖动
+let freehandStartPos = null    // 手势起点（经纬度）
+let freehandLastScreen = null  // 上次采样的屏幕坐标
+
+// 是否落在地图画布上（用元素类型判断，避免与 Cesium 内部 canvas 引用比较时因代理/重建失败）
+function isMapCanvas(target) {
+  return !!target && target.tagName === 'CANVAS' && !!target.closest && !!target.closest('.cesium-viewer')
+}
+
+function eventToCanvasPosition(e) {
+  const el = e.target
+  const rect = el.getBoundingClientRect()
+  const x = e.clientX - rect.left
+  const y = e.clientY - rect.top
+  // 超出画布范围不采样（拖动到工具栏等区域时）
+  if (x < 0 || y < 0 || x > rect.width || y > rect.height) return null
+  return new Cartesian2(x, y)
+}
+
+// 自由绘制采样：优先与地形/椭球求交（不拾取自身预览线，避免高度抖动）
+function pickGroundLngLat(position) {
+  if (!position) return null
+  const scene = viewer.scene
+  try {
+    const ray = viewer.camera.getPickRay(position)
+    if (ray) {
+      const cartesian = scene.globe.pick(ray, scene)
+      if (cartesian) {
+        const carto = Cartographic.fromCartesian(cartesian)
+        return {
+          lng: CesiumMath.toDegrees(carto.longitude),
+          lat: CesiumMath.toDegrees(carto.latitude),
+          height: carto.height
+        }
+      }
+    }
+  } catch (err) { /* 回退到通用拾取 */ }
+  return pickLngLat(position)
+}
+
+// 自由绘制默认可用：按住 Shift + 左键拖动即进入自由绘制
+function isFreehandGesture(e) {
+  return !!drawState && drawState.type === 'LineString' && e.shiftKey
+}
+
+function onFreehandPointerDown(e) {
+  if (e.button !== 0) return
+  // 每次新的按下都重置上一笔遗留的 click 抑制标记
+  skipClick = false
+  if (!viewer || viewer.isDestroyed()) return
+  if (!isMapCanvas(e.target)) return
+  if (!isFreehandGesture(e)) return
+
+  const pos = pickGroundLngLat(eventToCanvasPosition(e))
+  if (!pos) return
+
+  // 手势开始：抢在 Cesium 相机处理本次 pointerdown 之前，把左键旋转改到中键
+  setDrawCameraMode()
+  freehandActive = true
+  freehandDragging = false
+  freehandStartPos = pos
+  freehandLastScreen = { x: e.clientX, y: e.clientY }
+  skipClick = true
+
+  // 捕获指针：拖出画布（如经过工具栏）仍能继续采样并在松开时收尾
+  try {
+    if (e.target.setPointerCapture) e.target.setPointerCapture(e.pointerId)
+  } catch (err) { /* 忽略 */ }
+
+  // 阻止事件继续传播到 Cesium，本次手势完全由自由绘制接管
+  e.preventDefault()
+  e.stopPropagation()
+}
+
+function onFreehandPointerMove(e) {
+  if (!freehandActive || !drawState) return
+  const dx = e.clientX - freehandLastScreen.x
+  const dy = e.clientY - freehandLastScreen.y
+  const distSq = dx * dx + dy * dy
+  if (!freehandDragging && distSq < FREEHAND_DRAG_THRESHOLD * FREEHAND_DRAG_THRESHOLD) return
+  if (freehandDragging && distSq < FREEHAND_SAMPLE_DIST * FREEHAND_SAMPLE_DIST) return
+
+  const pos = pickGroundLngLat(eventToCanvasPosition(e))
+  if (!pos) return
+
+  if (!freehandDragging) {
+    // 首次拖动：这一笔就是一条新线
+    freehandDragging = true
+    drawState.points = [freehandStartPos]
+    drawState.mousePos = null
+  }
+  freehandLastScreen = { x: e.clientX, y: e.clientY }
+  drawState.points.push(pos)
+  updatePreview()
+}
+
+function onFreehandPointerUp(e) {
+  if (!freehandActive) return
+  freehandActive = false
+  restoreDrawCameraMode()
+  freehandLastScreen = null
+  skipClick = true
+  e.preventDefault()
+  e.stopPropagation()
+  if (!drawState) return
+  if (!freehandDragging) {
+    // 没有拖动：按一次普通单击处理（加点）
+    if (freehandStartPos) {
+      drawState.points.push(freehandStartPos)
+      updatePreview()
+    }
+    freehandStartPos = null
+    return
+  }
+  freehandDragging = false
+  freehandStartPos = null
+  finishClickSequence()
+}
+
+function cancelFreehand() {
+  if (!freehandActive) return
+  freehandActive = false
+  freehandDragging = false
+  freehandStartPos = null
+  freehandLastScreen = null
+  restoreDrawCameraMode()
+}
+
+function setupFreehand() {
+  // 必须用 pointer 事件：Cesium 在 canvas 上对 pointerdown 调用了 preventDefault()，
+  // 浏览器因此不会再派发兼容的 mousedown，监听 mousedown 会完全收不到画布上的按下。
+  window.addEventListener('pointerdown', onFreehandPointerDown, true)
+  window.addEventListener('pointermove', onFreehandPointerMove, true)
+  window.addEventListener('pointerup', onFreehandPointerUp, true)
+  window.addEventListener('pointercancel', cancelFreehand, true)
+  window.addEventListener('blur', cancelFreehand)
+}
+
+function teardownFreehand() {
+  window.removeEventListener('pointerdown', onFreehandPointerDown, true)
+  window.removeEventListener('pointermove', onFreehandPointerMove, true)
+  window.removeEventListener('pointerup', onFreehandPointerUp, true)
+  window.removeEventListener('pointercancel', cancelFreehand, true)
+  window.removeEventListener('blur', cancelFreehand)
+  cancelFreehand()
+}
+
 // ==================== 点击序列绘制（线/面/箭头） ====================
 function setupClickSequence(type) {
+  // 单击加点
   handler.setInputAction((movement) => {
+    // 自由绘制手势结束后的那次 click 忽略掉
+    if (skipClick) {
+      skipClick = false
+      return
+    }
+    if (!drawState) return
     const pos = pickLngLat(movement.position)
     if (!pos) return
     // 双击会触发两次单击，用定时器延迟加点，双击时取消
@@ -1119,6 +1591,7 @@ function setupClickSequence(type) {
     }
     clickTimer = setTimeout(() => {
       clickTimer = null
+      if (!drawState) return
       drawState.points.push(pos)
       updatePreview()
     }, 250)
@@ -1152,6 +1625,11 @@ function updatePreview() {
   const mouse = drawState.mousePos
   const mouseArr = mouse ? [mouse.lng, mouse.lat, mouse.height] : null
   const all = mouseArr ? [...pts, mouseArr] : pts
+  // 折线至少需要 2 个位置，单点时先清掉预览
+  if (all.length < 2) {
+    cleanupPreview()
+    return
+  }
   const params = getCurrentParams()
   const h = avgH(all)
 
@@ -1338,8 +1816,12 @@ function finishDrag() {
 
 // ==================== 绘制模式 ====================
 function startDrawMode(type) {
-  // 绘制时禁用相机控制，避免与鼠标交互冲突
-  viewer.scene.screenSpaceCameraController.enableInputs = false
+  // 绘制时保留相机交互（滚轮缩放 / 右键缩放 / 拖动旋转），
+  // 仅拖拽类工具需要独占左键，此时把旋转临时交给中键
+  viewer.scene.screenSpaceCameraController.enableInputs = true
+  cancelFreehand()
+  skipClick = false
+  if (DRAG_TYPES.includes(type)) setDrawCameraMode()
   // 设置十字丝光标
   viewer.scene.canvas.style.cursor = 'crosshair'
   drawState = { type, points: [], mousePos: null, startPos: null, endPos: null, dragging: false }
@@ -1389,10 +1871,13 @@ function deactivateTool() {
   }
   cleanupPreview()
   drawState = null
+  cancelFreehand()
+  skipClick = false
   if (handler) {
     handler.destroy()
     handler = null
   }
+  restoreDrawCameraMode()
   if (viewer && !viewer.isDestroyed() && viewer.scene) {
     viewer.scene.screenSpaceCameraController.enableInputs = true
     // 恢复默认光标
@@ -1418,6 +1903,10 @@ function onStyleChange() {
     params.dashGap = dashGap.value
     params.fillColor = fillColor.value
     params.fillOpacity = fillOpacity.value
+    params.outlineEnabled = outlineEnabled.value
+    params.outlineColor = outlineColor.value
+    params.outlineWidth = outlineWidth.value
+    params.outlineOpacity = outlineOpacity.value
     if (hasRadius.value) params.radius = featureRadius.value
     if (isArrow.value) {
       params.arrowScale = arrowScale.value
@@ -1453,6 +1942,10 @@ function updatePanelFromFeature(f) {
   dashGap.value = params.dashGap || 4
   fillColor.value = params.fillColor || '#4096FF'
   fillOpacity.value = params.fillOpacity !== undefined ? params.fillOpacity : 0.15
+  outlineEnabled.value = !!params.outlineEnabled
+  outlineColor.value = params.outlineColor || '#FFFFFF'
+  outlineWidth.value = params.outlineWidth !== undefined ? params.outlineWidth : 2
+  outlineOpacity.value = params.outlineOpacity !== undefined ? params.outlineOpacity : 1
   if (params.radius !== undefined) featureRadius.value = params.radius
   if (params.arrowScale !== undefined) arrowScale.value = params.arrowScale
   if (params.arrowHeadWidth !== undefined) arrowHeadWidth.value = params.arrowHeadWidth
@@ -1522,10 +2015,13 @@ onMounted(() => {
     viewer.scene.globe.depthTestAgainstTerrain = true
   }
   document.addEventListener('keydown', handleKeydown)
+  // 自由绘制使用原生鼠标事件（window 捕获阶段），与 Cesium 输入处理器解耦
+  setupFreehand()
 })
 
 onUnmounted(() => {
   deactivateTool()
+  teardownFreehand()
   document.removeEventListener('keydown', handleKeydown)
   if (viewer && !viewer.isDestroyed() && viewer.scene && viewer.scene.globe) {
     viewer.scene.globe.depthTestAgainstTerrain = savedDepthTest
@@ -1691,6 +2187,76 @@ onUnmounted(() => {
   padding: 4px 0 0 0;
   border-top: 1px solid rgba(255, 170, 0, 0.15);
   margin-top: 2px;
+}
+
+/* 分隔标题（描边） */
+.style-separator.outline-sep {
+  color: rgba(105, 177, 255, 0.85);
+  border-top-color: rgba(64, 150, 255, 0.22);
+}
+
+/* 分隔标题（自由绘制） */
+.style-separator.freehand-sep {
+  color: rgba(126, 232, 190, 0.85);
+  border-top-color: rgba(82, 220, 170, 0.22);
+}
+
+.freehand-hint {
+  font-size: 10px;
+  line-height: 1.5;
+  padding: 1px 0 2px 0;
+  color: rgba(126, 232, 190, 0.68);
+}
+
+/* 开关按钮 */
+.switch-toggle {
+  position: relative;
+  width: 38px;
+  height: 20px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 1px solid rgba(64, 150, 255, 0.25);
+  border-radius: 10px;
+  background: rgba(64, 150, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.22s ease;
+}
+
+.switch-toggle:hover {
+  border-color: rgba(64, 150, 255, 0.5);
+}
+
+.switch-toggle.active {
+  background: #4096FF;
+  border-color: #4096FF;
+  box-shadow: 0 0 8px rgba(64, 150, 255, 0.45);
+}
+
+.switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(186, 224, 255, 0.75);
+  transition: all 0.22s ease;
+}
+
+.switch-toggle.active .switch-knob {
+  left: 20px;
+  background: #fff;
+}
+
+.switch-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(186, 224, 255, 0.6);
+  letter-spacing: 0.3px;
+}
+
+.switch-toggle.active + .switch-text {
+  color: #69b1ff;
 }
 
 .style-control {

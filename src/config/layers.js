@@ -767,6 +767,28 @@ const layers = [
         "visible": false,
         "zoom": ""
       },
+      {
+        "id": "Admin_World_maps-for-free",
+        "label": "Admin_maps-for-free_world",
+        "name": "Admin_World_maps-for-free",
+        "url": `/maps-for-free/layer/admin/z{z}/row{y}/{z}_{x}-{y}.gif`,
+        "group": "admin",
+        "type": "image",
+        "serviceType": "xyz",
+        "visible": false,
+        "zoom": ""
+      },
+      {
+        "id": "Country_World_maps-for-free",
+        "label": "Country_maps_for-free_world",
+        "name": "Country_world_maps-for-free",
+        "url": `/maps-for-free/layer/country/z{z}/row{y}/{z}_{x}-{y}.gif`,
+        "group": "country",
+        "type": "image",
+        "serviceType": "xyz",
+        "visible": false,
+        "zoom": ""
+      },
     ]
   },
   //==========================注记图层开始============================//

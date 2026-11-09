@@ -56,7 +56,7 @@
               type="range"
               class="range-input"
               v-model.number="strokeWidth"
-              min="1" max="10" step="0.5"
+              min="1" max="20" step="0.5"
               @input="onStyleChange"
             />
             <span class="range-value">{{ strokeWidth }}px</span>
@@ -626,7 +626,7 @@
                 type="range"
                 class="range-input"
                 v-model.number="arrowScale"
-                min="0.5" max="5" step="0.1"
+                min="0.5" max="20" step="0.5"
                 @input="onStyleChange"
               />
               <span class="range-value">{{ arrowScale }}x</span>
@@ -639,7 +639,7 @@
                 type="range"
                 class="range-input"
                 v-model.number="arrowHeadWidth"
-                min="1" max="10" step="0.5"
+                min="1" max="20" step="0.5"
                 @input="onStyleChange"
               />
               <span class="range-value">{{ arrowHeadWidth }}px</span>
