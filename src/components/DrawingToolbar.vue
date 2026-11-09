@@ -651,6 +651,22 @@
         <template v-if="isBattleArrow">
           <div class="style-separator">渐变填充</div>
           <div class="style-row">
+            <label class="style-label">启用渐变色</label>
+            <div class="style-control">
+              <button
+                class="switch-toggle"
+                :class="{ active: gradientEnabled }"
+                @click="toggleGradient"
+                :title="gradientEnabled ? '点击关闭渐变色' : '点击开启渐变色'"
+              >
+                <span class="switch-knob"></span>
+              </button>
+              <span class="switch-text">{{ gradientEnabled ? '已开启' : '已关闭' }}</span>
+            </div>
+            <div class="freehand-hint" v-if="!gradientEnabled">未开启时：使用边线颜色纯色填充</div>
+          </div>
+          <template v-if="gradientEnabled">
+          <div class="style-row">
             <label class="style-label">起始颜色（尾）</label>
             <div class="style-control">
               <input type="color" class="color-input" v-model="gradientStartColor" @input="onStyleChange" />
@@ -700,6 +716,7 @@
               <span class="range-value">{{ Math.round(gradientEndOpacity * 100) }}%</span>
             </div>
           </div>
+          </template>
         </template>
 
         <!-- 删除选中要素按钮 -->
@@ -883,6 +900,7 @@ const textPadding = ref(4)
 const arrowScale = ref(1)
 const arrowHeadWidth = ref(3)
 // 军标箭头渐变参数（默认按附件样式：尾→头由淡变深）
+const gradientEnabled = ref(true)
 const gradientStartColor = ref('#FFB3B3')
 const gradientEndColor = ref('#D32F2F')
 const gradientStartOpacity = ref(0.3)
@@ -940,6 +958,12 @@ const animTypes = [
 // 开关切换
 function toggleOutline() {
   outlineEnabled.value = !outlineEnabled.value
+  onStyleChange()
+}
+
+// 军标箭头：启用/关闭渐变色
+function toggleGradient() {
+  gradientEnabled.value = !gradientEnabled.value
   onStyleChange()
 }
 
@@ -1492,6 +1516,7 @@ function getCurrentParams() {
     textPadding: textPadding.value,
     arrowScale: arrowScale.value,
     arrowHeadWidth: arrowHeadWidth.value,
+    gradientEnabled: gradientEnabled.value,
     gradientStartColor: gradientStartColor.value,
     gradientEndColor: gradientEndColor.value,
     gradientStartOpacity: gradientStartOpacity.value,
@@ -1868,6 +1893,9 @@ function activateTool(type) {
 
   mapStore.setDrawingActive(true)
 
+  // 箭头大小按类型给默认值（军标箭头默认 5x，其余箭头 1x）
+  if (ARROW_TYPES.includes(type)) arrowScale.value = type === 'BattleArrow' ? 5 : 1
+
   if (type === 'Select') {
     activateSelectMode()
   } else {
@@ -2131,19 +2159,25 @@ function createBattleArrowPreviewStyle(params, feature) {
       const sc = params.strokeColor || '#D32F2F'
       const sw = params.strokeWidth || 2
       const so = params.strokeOpacity !== undefined ? params.strokeOpacity : 1
-      // 起始色 = 箭尾（淡/透），结束色 = 箭头（深/饱和）
-      const gs = params.gradientStartColor || '#FFB3B3'
-      const ge = params.gradientEndColor || '#D32F2F'
-      const gso = params.gradientStartOpacity !== undefined ? params.gradientStartOpacity : 0.3
-      const geo = params.gradientEndOpacity !== undefined ? params.gradientEndOpacity : 1
 
-      // 渐变端点：路径起点（tail） → 路径终点（tip）
-      const tailPx = pixelPath[0]
-      const tipPx = pixelPath[pixelPath.length - 1]
+      // 关闭渐变色时用边线颜色纯色填充
+      let fillStyle = hexToRgba(sc, so)
+      if (params.gradientEnabled !== false) {
+        // 起始色 = 箭尾（淡/透），结束色 = 箭头（深/饱和）
+        const gs = params.gradientStartColor || '#FFB3B3'
+        const ge = params.gradientEndColor || '#D32F2F'
+        const gso = params.gradientStartOpacity !== undefined ? params.gradientStartOpacity : 0.3
+        const geo = params.gradientEndOpacity !== undefined ? params.gradientEndOpacity : 1
 
-      const gradient = context.createLinearGradient(tailPx[0], tailPx[1], tipPx[0], tipPx[1])
-      gradient.addColorStop(0, hexToRgba(gs, gso))
-      gradient.addColorStop(1, hexToRgba(ge, geo))
+        // 渐变端点：路径起点（tail） → 路径终点（tip）
+        const tailPx = pixelPath[0]
+        const tipPx = pixelPath[pixelPath.length - 1]
+
+        const gradient = context.createLinearGradient(tailPx[0], tailPx[1], tipPx[0], tipPx[1])
+        gradient.addColorStop(0, hexToRgba(gs, gso))
+        gradient.addColorStop(1, hexToRgba(ge, geo))
+        fillStyle = gradient
+      }
 
       context.beginPath()
       context.moveTo(pixelRing[0][0], pixelRing[0][1])
@@ -2161,7 +2195,7 @@ function createBattleArrowPreviewStyle(params, feature) {
         context.stroke()
       }
 
-      context.fillStyle = gradient
+      context.fillStyle = fillStyle
       context.fill()
 
       context.strokeStyle = hexToRgba(sc, so)
@@ -2292,6 +2326,7 @@ function onStyleChange() {
       params.arrowHeadWidth = arrowHeadWidth.value
       // 军标箭头渐变参数
       if (currentFeatureType.value === 'BattleArrow') {
+        params.gradientEnabled = gradientEnabled.value
         params.gradientStartColor = gradientStartColor.value
         params.gradientEndColor = gradientEndColor.value
         params.gradientStartOpacity = gradientStartOpacity.value
@@ -2369,6 +2404,7 @@ function updatePanelFromFeature(feature) {
   textPadding.value = params.textPadding !== undefined ? params.textPadding : 4
   if (params.arrowScale !== undefined) arrowScale.value = params.arrowScale
   if (params.arrowHeadWidth !== undefined) arrowHeadWidth.value = params.arrowHeadWidth
+  gradientEnabled.value = params.gradientEnabled !== undefined ? !!params.gradientEnabled : true
   if (params.gradientStartColor !== undefined) gradientStartColor.value = params.gradientStartColor
   if (params.gradientEndColor !== undefined) gradientEndColor.value = params.gradientEndColor
   if (params.gradientStartOpacity !== undefined) gradientStartOpacity.value = params.gradientStartOpacity

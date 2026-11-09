@@ -304,6 +304,22 @@
         <template v-if="isBattleArrow">
           <div class="style-separator">渐变填充</div>
           <div class="style-row">
+            <label class="style-label">启用渐变色</label>
+            <div class="style-control">
+              <button
+                class="switch-toggle"
+                :class="{ active: gradientEnabled }"
+                @click="toggleGradient"
+                :title="gradientEnabled ? '点击关闭渐变色' : '点击开启渐变色'"
+              >
+                <span class="switch-knob"></span>
+              </button>
+              <span class="switch-text">{{ gradientEnabled ? '已开启' : '已关闭' }}</span>
+            </div>
+            <div class="freehand-hint" v-if="!gradientEnabled">未开启时：使用边线颜色纯色填充</div>
+          </div>
+          <template v-if="gradientEnabled">
+          <div class="style-row">
             <label class="style-label">起始颜色（尾）</label>
             <div class="style-control">
               <input type="color" class="color-input" v-model="gradientStartColor" @input="onStyleChange" />
@@ -353,6 +369,7 @@
               <span class="range-value">{{ Math.round(gradientEndOpacity * 100) }}%</span>
             </div>
           </div>
+          </template>
         </template>
 
         <!-- 删除选中要素按钮 -->
@@ -513,6 +530,7 @@ const outlineOpacity = ref(1)
 const arrowScale = ref(1)
 const arrowHeadWidth = ref(3)
 // 军标箭头渐变参数（尾→头由淡变深）
+const gradientEnabled = ref(true)
 const gradientStartColor = ref('#FFB3B3')
 const gradientEndColor = ref('#D32F2F')
 const gradientStartOpacity = ref(0.3)
@@ -544,6 +562,12 @@ function selectPresetColor(color, target) {
 // 开关切换
 function toggleOutline() {
   outlineEnabled.value = !outlineEnabled.value
+  onStyleChange()
+}
+
+// 军标箭头：启用/关闭渐变色
+function toggleGradient() {
+  gradientEnabled.value = !gradientEnabled.value
   onStyleChange()
 }
 
@@ -1134,6 +1158,7 @@ function getCurrentParams() {
     radius: featureRadius.value,
     arrowScale: arrowScale.value,
     arrowHeadWidth: arrowHeadWidth.value,
+    gradientEnabled: gradientEnabled.value,
     gradientStartColor: gradientStartColor.value,
     gradientEndColor: gradientEndColor.value,
     gradientStartOpacity: gradientStartOpacity.value,
@@ -1199,10 +1224,13 @@ function applyFeatureStyle(f) {
   if (f.fillEntity) {
     let material
     if (t === 'BattleArrow') {
-      material = new ImageMaterialProperty({
-        image: createGradientCanvas(p),
-        repeat: new Cartesian2(1, 1)
-      })
+      // 关闭渐变色时用边线颜色纯色填充
+      material = p.gradientEnabled === false
+        ? cssColor(p.strokeColor || '#4096FF', p.strokeOpacity ?? 1)
+        : new ImageMaterialProperty({
+          image: createGradientCanvas(p),
+          repeat: new Cartesian2(1, 1)
+        })
     } else {
       material = cssColor(p.fillColor || p.strokeColor || '#4096FF', p.fillOpacity ?? 0.15)
     }
@@ -1667,7 +1695,9 @@ function updatePreview() {
       if (body) {
         setPreviewFill(
           fromLocalMeters(local, body, avgH(all)),
-          new ImageMaterialProperty({ image: createGradientCanvas(params), repeat: new Cartesian2(1, 1) }),
+          params.gradientEnabled === false
+            ? cssColor(params.strokeColor || '#4096FF', params.strokeOpacity ?? 1)
+            : new ImageMaterialProperty({ image: createGradientCanvas(params), repeat: new Cartesian2(1, 1) }),
           h
         )
         return
@@ -1857,6 +1887,9 @@ function activateTool(type) {
   mapStore.setDrawingActive(true)
   activeTool.value = type
 
+  // 箭头大小按类型给默认值（军标箭头默认 5x，其余箭头 1x）
+  if (ARROW_TYPES.includes(type)) arrowScale.value = type === 'BattleArrow' ? 5 : 1
+
   if (type === 'Select') {
     startSelectMode()
   } else {
@@ -1912,6 +1945,7 @@ function onStyleChange() {
       params.arrowScale = arrowScale.value
       params.arrowHeadWidth = arrowHeadWidth.value
       if (currentFeatureType.value === 'BattleArrow') {
+        params.gradientEnabled = gradientEnabled.value
         params.gradientStartColor = gradientStartColor.value
         params.gradientEndColor = gradientEndColor.value
         params.gradientStartOpacity = gradientStartOpacity.value
@@ -1949,6 +1983,7 @@ function updatePanelFromFeature(f) {
   if (params.radius !== undefined) featureRadius.value = params.radius
   if (params.arrowScale !== undefined) arrowScale.value = params.arrowScale
   if (params.arrowHeadWidth !== undefined) arrowHeadWidth.value = params.arrowHeadWidth
+  gradientEnabled.value = params.gradientEnabled !== undefined ? !!params.gradientEnabled : true
   if (params.gradientStartColor !== undefined) gradientStartColor.value = params.gradientStartColor
   if (params.gradientEndColor !== undefined) gradientEndColor.value = params.gradientEndColor
   if (params.gradientStartOpacity !== undefined) gradientStartOpacity.value = params.gradientStartOpacity
