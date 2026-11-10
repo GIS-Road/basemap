@@ -423,6 +423,37 @@
             </div>
           </div>
 
+          <div class="style-separator text-sep">位置偏移</div>
+
+          <div class="style-row">
+            <label class="style-label">水平偏移</label>
+            <div class="style-control">
+              <input
+                type="range"
+                class="range-input"
+                v-model.number="textOffsetX"
+                min="-200" max="200" step="1"
+                @input="onStyleChange"
+              />
+              <span class="range-value">{{ textOffsetX }}px</span>
+            </div>
+            <div class="freehand-hint">负值向左，正值向右</div>
+          </div>
+          <div class="style-row">
+            <label class="style-label">垂直偏移</label>
+            <div class="style-control">
+              <input
+                type="range"
+                class="range-input"
+                v-model.number="textOffsetY"
+                min="-200" max="200" step="1"
+                @input="onStyleChange"
+              />
+              <span class="range-value">{{ textOffsetY }}px</span>
+            </div>
+            <div class="freehand-hint">负值向上，正值向下</div>
+          </div>
+
           <div class="style-separator text-sep">文字背景</div>
 
           <div class="style-row">
@@ -516,6 +547,19 @@
                   @click="selectPresetColor(c, 'textBorder')"
                   :title="c"
                 ></button>
+              </div>
+            </div>
+            <div class="style-row">
+              <label class="style-label">边框透明度</label>
+              <div class="style-control">
+                <input
+                  type="range"
+                  class="range-input"
+                  v-model.number="textBorderOpacity"
+                  min="0" max="1" step="0.05"
+                  @input="onStyleChange"
+                />
+                <span class="range-value">{{ Math.round(textBorderOpacity * 100) }}%</span>
               </div>
             </div>
             <div class="style-row">
@@ -883,6 +927,8 @@ const textFontSize = ref(14)
 const textBold = ref(false)
 const textColor = ref('#FFFFFF')
 const textRotation = ref(0)          // 角度（度）
+const textOffsetX = ref(0)           // 水平偏移：负=向左，正=向右（px）
+const textOffsetY = ref(0)           // 垂直偏移：负=向上，正=向下（px）
 const textOutlineEnabled = ref(false)
 const textOutlineColor = ref('#000000')
 const textOutlineWidth = ref(3)
@@ -1329,7 +1375,8 @@ function createTextRenderer(params, opts = {}) {
     const pad = params.textPadding !== undefined ? params.textPadding : 4
 
     context.save()
-    context.translate(px, py)
+    // 位置偏移（屏幕像素，旋转前应用）：x 正=向右，y 正=向下
+    context.translate(px + (params.textOffsetX || 0), py + (params.textOffsetY || 0))
     context.rotate(rot + (state.rotation || 0))
 
     context.font = `${bold ? 'bold ' : ''}${size}px sans-serif`
@@ -1502,6 +1549,8 @@ function getCurrentParams() {
     textBold: textBold.value,
     textColor: textColor.value,
     textRotation: textRotation.value,
+    textOffsetX: textOffsetX.value,
+    textOffsetY: textOffsetY.value,
     textOutlineEnabled: textOutlineEnabled.value,
     textOutlineColor: textOutlineColor.value,
     textOutlineWidth: textOutlineWidth.value,
@@ -2308,6 +2357,8 @@ function onStyleChange() {
       params.textBold = textBold.value
       params.textColor = textColor.value
       params.textRotation = textRotation.value
+      params.textOffsetX = textOffsetX.value
+      params.textOffsetY = textOffsetY.value
       params.textOutlineEnabled = textOutlineEnabled.value
       params.textOutlineColor = textOutlineColor.value
       params.textOutlineWidth = textOutlineWidth.value
@@ -2390,6 +2441,8 @@ function updatePanelFromFeature(feature) {
   textBold.value = !!params.textBold
   textColor.value = params.textColor || '#FFFFFF'
   textRotation.value = params.textRotation !== undefined ? params.textRotation : 0
+  textOffsetX.value = params.textOffsetX !== undefined ? params.textOffsetX : 0
+  textOffsetY.value = params.textOffsetY !== undefined ? params.textOffsetY : 0
   textOutlineEnabled.value = !!params.textOutlineEnabled
   textOutlineColor.value = params.textOutlineColor || '#000000'
   textOutlineWidth.value = params.textOutlineWidth !== undefined ? params.textOutlineWidth : 3
@@ -2646,6 +2699,13 @@ onUnmounted(() => {
 }
 
 /* 文字标注控件 */
+.freehand-hint {
+  font-size: 10px;
+  line-height: 1.5;
+  padding: 1px 0 2px 0;
+  color: rgba(126, 232, 190, 0.68);
+}
+
 .text-content-input {
   width: 100%;
   padding: 4px 6px;

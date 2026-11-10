@@ -372,6 +372,250 @@
           </template>
         </template>
 
+        <!-- ===== 文字标注样式 ===== -->
+        <template v-if="isTextType">
+          <div class="style-row">
+            <label class="style-label">文字内容</label>
+            <div class="style-control">
+              <input
+                type="text"
+                class="text-content-input"
+                v-model="textContent"
+                @input="onStyleChange"
+                placeholder="输入标注文字"
+                maxlength="60"
+              />
+            </div>
+          </div>
+
+          <div class="style-row">
+            <label class="style-label">字体大小</label>
+            <div class="style-control">
+              <input type="range" class="range-input" v-model.number="textFontSize" min="8" max="64" step="1" @input="onStyleChange" />
+              <span class="range-value">{{ textFontSize }}px</span>
+            </div>
+          </div>
+
+          <div class="style-row">
+            <label class="style-label">文字颜色</label>
+            <div class="style-control">
+              <input type="color" class="color-input" v-model="textColor" @input="onStyleChange" />
+              <span class="color-value">{{ textColor }}</span>
+            </div>
+            <div class="preset-colors">
+              <button
+                v-for="c in presetColors"
+                :key="'t-' + c"
+                class="preset-color-swatch"
+                :class="{ active: textColor.toUpperCase() === c.toUpperCase() }"
+                :style="{ background: c }"
+                @click="selectPresetColor(c, 'text')"
+                :title="c"
+              ></button>
+            </div>
+          </div>
+
+          <div class="style-row">
+            <label class="style-label">加粗</label>
+            <div class="style-control">
+              <button
+                class="switch-toggle"
+                :class="{ active: textBold }"
+                @click="textBold = !textBold; onStyleChange()"
+                :title="textBold ? '点击取消加粗' : '点击加粗文字'"
+              >
+                <span class="switch-knob"></span>
+              </button>
+              <span class="switch-text">{{ textBold ? '已加粗' : '常规' }}</span>
+            </div>
+          </div>
+
+          <div class="style-row">
+            <label class="style-label">旋转角度</label>
+            <div class="style-control">
+              <input type="range" class="range-input" v-model.number="textRotation" min="0" max="360" step="1" @input="onStyleChange" />
+              <span class="range-value">{{ textRotation }}°</span>
+            </div>
+          </div>
+
+          <div class="style-separator">位置偏移</div>
+
+          <div class="style-row">
+            <label class="style-label">水平偏移</label>
+            <div class="style-control">
+              <input type="range" class="range-input" v-model.number="textOffsetX" min="-200" max="200" step="1" @input="onStyleChange" />
+              <span class="range-value">{{ textOffsetX }}px</span>
+            </div>
+            <div class="freehand-hint">负值向左，正值向右</div>
+          </div>
+          <div class="style-row">
+            <label class="style-label">垂直偏移</label>
+            <div class="style-control">
+              <input type="range" class="range-input" v-model.number="textOffsetY" min="-200" max="200" step="1" @input="onStyleChange" />
+              <span class="range-value">{{ textOffsetY }}px</span>
+            </div>
+            <div class="freehand-hint">负值向上，正值向下</div>
+          </div>
+
+          <div class="style-separator">文字背景</div>
+
+          <div class="style-row">
+            <label class="style-label">启用背景</label>
+            <div class="style-control">
+              <button
+                class="switch-toggle"
+                :class="{ active: textBgEnabled }"
+                @click="textBgEnabled = !textBgEnabled; onStyleChange()"
+                :title="textBgEnabled ? '点击关闭文字背景' : '点击开启文字背景'"
+              >
+                <span class="switch-knob"></span>
+              </button>
+              <span class="switch-text">{{ textBgEnabled ? '已开启' : '已关闭' }}</span>
+            </div>
+          </div>
+
+          <template v-if="textBgEnabled">
+            <div class="style-row">
+              <label class="style-label">背景颜色</label>
+              <div class="style-control">
+                <input type="color" class="color-input" v-model="textBgColor" @input="onStyleChange" />
+                <span class="color-value">{{ textBgColor }}</span>
+              </div>
+              <div class="preset-colors">
+                <button
+                  v-for="c in presetColors"
+                  :key="'tb-' + c"
+                  class="preset-color-swatch"
+                  :class="{ active: textBgColor.toUpperCase() === c.toUpperCase() }"
+                  :style="{ background: c }"
+                  @click="selectPresetColor(c, 'textBg')"
+                  :title="c"
+                ></button>
+              </div>
+            </div>
+            <div class="style-row">
+              <label class="style-label">背景透明度</label>
+              <div class="style-control">
+                <input type="range" class="range-input" v-model.number="textBgOpacity" min="0" max="1" step="0.05" @input="onStyleChange" />
+                <span class="range-value">{{ Math.round(textBgOpacity * 100) }}%</span>
+              </div>
+            </div>
+          </template>
+
+          <div class="style-separator">文字边框</div>
+
+          <div class="style-row">
+            <label class="style-label">启用边框</label>
+            <div class="style-control">
+              <button
+                class="switch-toggle"
+                :class="{ active: textBorderEnabled }"
+                @click="textBorderEnabled = !textBorderEnabled; onStyleChange()"
+                :title="textBorderEnabled ? '点击关闭边框' : '点击开启边框'"
+              >
+                <span class="switch-knob"></span>
+              </button>
+              <span class="switch-text">{{ textBorderEnabled ? '已开启' : '已关闭' }}</span>
+            </div>
+          </div>
+
+          <template v-if="textBorderEnabled">
+            <div class="style-row">
+              <label class="style-label">边框颜色</label>
+              <div class="style-control">
+                <input type="color" class="color-input" v-model="textBorderColor" @input="onStyleChange" />
+                <span class="color-value">{{ textBorderColor }}</span>
+              </div>
+              <div class="preset-colors">
+                <button
+                  v-for="c in presetColors"
+                  :key="'tb2-' + c"
+                  class="preset-color-swatch"
+                  :class="{ active: textBorderColor.toUpperCase() === c.toUpperCase() }"
+                  :style="{ background: c }"
+                  @click="selectPresetColor(c, 'textBorder')"
+                  :title="c"
+                ></button>
+              </div>
+            </div>
+            <div class="style-row">
+              <label class="style-label">边框透明度</label>
+              <div class="style-control">
+                <input type="range" class="range-input" v-model.number="textBorderOpacity" min="0" max="1" step="0.05" @input="onStyleChange" />
+                <span class="range-value">{{ Math.round(textBorderOpacity * 100) }}%</span>
+              </div>
+            </div>
+            <div class="style-row">
+              <label class="style-label">边框宽度</label>
+              <div class="style-control">
+                <input type="range" class="range-input" v-model.number="textBorderWidth" min="0.5" max="8" step="0.5" @input="onStyleChange" />
+                <span class="range-value">{{ textBorderWidth }}px</span>
+              </div>
+            </div>
+            <div class="style-row">
+              <label class="style-label">边框圆角</label>
+              <div class="style-control">
+                <input type="range" class="range-input" v-model.number="textBorderRadius" min="0" max="24" step="1" @input="onStyleChange" />
+                <span class="range-value">{{ textBorderRadius }}px</span>
+              </div>
+            </div>
+          </template>
+
+          <!-- 内边距：背景 / 边框共用同一盒子 -->
+          <div class="style-row" v-if="textBgEnabled || textBorderEnabled">
+            <label class="style-label">内边距</label>
+            <div class="style-control">
+              <input type="range" class="range-input" v-model.number="textPadding" min="0" max="24" step="1" @input="onStyleChange" />
+              <span class="range-value">{{ textPadding }}px</span>
+            </div>
+          </div>
+
+          <div class="style-separator">文字描边</div>
+
+          <div class="style-row">
+            <label class="style-label">启用描边</label>
+            <div class="style-control">
+              <button
+                class="switch-toggle"
+                :class="{ active: textOutlineEnabled }"
+                @click="textOutlineEnabled = !textOutlineEnabled; onStyleChange()"
+                :title="textOutlineEnabled ? '点击关闭文字描边' : '点击开启文字描边'"
+              >
+                <span class="switch-knob"></span>
+              </button>
+              <span class="switch-text">{{ textOutlineEnabled ? '已开启' : '已关闭' }}</span>
+            </div>
+          </div>
+
+          <template v-if="textOutlineEnabled">
+            <div class="style-row">
+              <label class="style-label">描边颜色</label>
+              <div class="style-control">
+                <input type="color" class="color-input" v-model="textOutlineColor" @input="onStyleChange" />
+                <span class="color-value">{{ textOutlineColor }}</span>
+              </div>
+              <div class="preset-colors">
+                <button
+                  v-for="c in presetColors"
+                  :key="'to-' + c"
+                  class="preset-color-swatch"
+                  :class="{ active: textOutlineColor.toUpperCase() === c.toUpperCase() }"
+                  :style="{ background: c }"
+                  @click="selectPresetColor(c, 'textOutline')"
+                  :title="c"
+                ></button>
+              </div>
+            </div>
+            <div class="style-row">
+              <label class="style-label">描边宽度</label>
+              <div class="style-control">
+                <input type="range" class="range-input" v-model.number="textOutlineWidth" min="0.5" max="8" step="0.5" @input="onStyleChange" />
+                <span class="range-value">{{ textOutlineWidth }}px</span>
+              </div>
+            </div>
+          </template>
+        </template>
+
         <!-- 删除选中要素按钮 -->
         <button
           v-if="selectedFeature"
@@ -503,6 +747,11 @@ const tools = [
     type: 'CircleOutline',
     label: '画圆',
     icon: '<svg viewBox="0 0 20 20" width="20" height="20"><circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>'
+  },
+  {
+    type: 'Text',
+    label: '标注',
+    icon: '<svg viewBox="0 0 20 20" width="20" height="20"><path d="M4 4h12M10 4v11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M7.5 17.5h5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
   }
 ]
 
@@ -535,6 +784,27 @@ const gradientStartColor = ref('#FFB3B3')
 const gradientEndColor = ref('#D32F2F')
 const gradientStartOpacity = ref(0.3)
 const gradientEndOpacity = ref(1)
+// 文字标注参数（默认值与 2D 文字标注一致）
+const textContent = ref('标注文字')
+const textFontSize = ref(14)
+const textBold = ref(false)
+const textColor = ref('#FFFFFF')
+const textRotation = ref(0)              // 旋转角度（度）
+const textOffsetX = ref(0)               // 水平偏移：负=向左，正=向右（px）
+const textOffsetY = ref(0)               // 垂直偏移：负=向上，正=向下（px）
+const textOutlineEnabled = ref(false)
+const textOutlineColor = ref('#000000')
+const textOutlineWidth = ref(3)
+const textBgEnabled = ref(false)
+const textBgColor = ref('#000000')
+const textBgOpacity = ref(0.45)
+const textPadding = ref(4)
+// 文字边框（默认值与 2D 一致）
+const textBorderEnabled = ref(false)
+const textBorderColor = ref('#4096FF')
+const textBorderOpacity = ref(1)
+const textBorderWidth = ref(1.5)
+const textBorderRadius = ref(4)
 
 // 预设颜色（与 2D 一致）
 const presetColors = [
@@ -556,6 +826,10 @@ function selectPresetColor(color, target) {
   else if (target === 'outline') outlineColor.value = color
   else if (target === 'gradientStart') gradientStartColor.value = color
   else if (target === 'gradientEnd') gradientEndColor.value = color
+  else if (target === 'text') textColor.value = color
+  else if (target === 'textBg') textBgColor.value = color
+  else if (target === 'textBorder') textBorderColor.value = color
+  else if (target === 'textOutline') textOutlineColor.value = color
   onStyleChange()
 }
 
@@ -601,7 +875,7 @@ const panelTitle = computed(() => {
       Point: '点要素', LineString: '线要素', Polygon: '面要素',
       Rectangle: '矩形要素', Ellipse: '椭圆要素',
       Arrow: '小箭头', WindArrow: '风向箭头', BattleArrow: '军标箭头',
-      CircleOutline: '圆形要素'
+      CircleOutline: '圆形要素', Text: '文字标注'
     }
     return `编辑${typeMap[type] || '要素'}样式`
   }
@@ -611,8 +885,11 @@ const panelTitle = computed(() => {
 // 是否有边线（所有要素除纯点外都有边线；圆形按线要素渲染，同样支持边线/描边）
 const hasStroke = computed(() => {
   const t = currentFeatureType.value
-  return t !== 'Point'
+  return t !== 'Point' && t !== 'Text'
 })
+
+// 是否为文字标注
+const isTextType = computed(() => currentFeatureType.value === 'Text')
 
 // 是否是箭头类型
 const isArrow = computed(() => {
@@ -741,6 +1018,81 @@ function hexToRgba(hex, alpha) {
   const g = parseInt(hex.slice(3, 5), 16)
   const b = parseInt(hex.slice(5, 7), 16)
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+// 文字标注画布：绘制文字 + 背景 + 边框 + 描边，返回 canvas 与逻辑尺寸
+// 尺寸用 2x 物理像素绘制，通过 imageWidth/imageHeight 还原为逻辑大小，保证文字清晰
+function createTextCanvas(p) {
+  const text = String(p.textContent || '标注文字')
+  const fontSize = p.textFontSize || 14
+  const font = `${p.textBold ? 'bold ' : ''}${fontSize}px sans-serif`
+  const lines = text.split('\n')
+  // 内边距：背景 / 边框共用同一盒子，统一用 textPadding
+  const pad = p.textPadding ?? 4
+
+  // 测量文本宽度
+  const measure = document.createElement('canvas').getContext('2d')
+  measure.font = font
+  let tw = 0
+  for (const l of lines) tw = Math.max(tw, measure.measureText(l).width)
+  const lineH = fontSize * 1.25
+  const w = Math.ceil(tw + pad * 2)
+  const h = Math.ceil(lines.length * lineH + pad * 2)
+
+  const dpr = 2
+  const canvas = document.createElement('canvas')
+  canvas.width = w * dpr
+  canvas.height = h * dpr
+  const ctx = canvas.getContext('2d')
+  ctx.scale(dpr, dpr)
+
+  const r = Math.min(p.textBorderRadius ?? 4, Math.min(w, h) / 2)
+  const roundRectPath = (ctx, x, y, w, h, r) => {
+    ctx.beginPath()
+    ctx.moveTo(x + r, y)
+    ctx.arcTo(x + w, y, x + w, y + h, r)
+    ctx.arcTo(x + w, y + h, x, y + h, r)
+    ctx.arcTo(x, y + h, x, y, r)
+    ctx.arcTo(x, y, x + w, y, r)
+    ctx.closePath()
+  }
+
+  // 背景
+  if (p.textBgEnabled) {
+    roundRectPath(ctx, 0, 0, w, h, r)
+    ctx.fillStyle = hexToRgba(p.textBgColor || '#000000', p.textBgOpacity ?? 0.45)
+    ctx.fill()
+  }
+
+  // 边框（画在背景之上，内缩一半线宽避免被裁切）
+  if (p.textBorderEnabled) {
+    const bwd = p.textBorderWidth ?? 1.5
+    const inset = bwd / 2
+    roundRectPath(ctx, inset, inset, w - bwd, h - bwd, Math.max(0, r - inset))
+    ctx.strokeStyle = hexToRgba(p.textBorderColor || '#4096FF', p.textBorderOpacity ?? 1)
+    ctx.lineWidth = bwd
+    ctx.stroke()
+  }
+
+  // 文字（水平垂直居中）
+  ctx.font = font
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  const cx = w / 2
+  if (p.textOutlineEnabled) {
+    ctx.strokeStyle = hexToRgba(p.textOutlineColor || '#000000', 1)
+    ctx.lineWidth = p.textOutlineWidth ?? 3
+    ctx.lineJoin = 'round'
+    ctx.miterLimit = 2
+  }
+  lines.forEach((l, i) => {
+    const y = pad + lineH * (i + 0.5)
+    if (p.textOutlineEnabled) ctx.strokeText(l, cx, y)
+    ctx.fillStyle = hexToRgba(p.textColor || '#FFFFFF', 1)
+    ctx.fillText(l, cx, y)
+  })
+
+  return { canvas, width: w, height: h }
 }
 
 // ==================== 边线描边材质 ====================
@@ -1162,7 +1514,26 @@ function getCurrentParams() {
     gradientStartColor: gradientStartColor.value,
     gradientEndColor: gradientEndColor.value,
     gradientStartOpacity: gradientStartOpacity.value,
-    gradientEndOpacity: gradientEndOpacity.value
+    gradientEndOpacity: gradientEndOpacity.value,
+    textContent: textContent.value,
+    textFontSize: textFontSize.value,
+    textBold: textBold.value,
+    textColor: textColor.value,
+    textRotation: textRotation.value,
+    textOffsetX: textOffsetX.value,
+    textOffsetY: textOffsetY.value,
+    textOutlineEnabled: textOutlineEnabled.value,
+    textOutlineColor: textOutlineColor.value,
+    textOutlineWidth: textOutlineWidth.value,
+    textBgEnabled: textBgEnabled.value,
+    textBgColor: textBgColor.value,
+    textBgOpacity: textBgOpacity.value,
+    textPadding: textPadding.value,
+    textBorderEnabled: textBorderEnabled.value,
+    textBorderColor: textBorderColor.value,
+    textBorderOpacity: textBorderOpacity.value,
+    textBorderWidth: textBorderWidth.value,
+    textBorderRadius: textBorderRadius.value
   }
 }
 
@@ -1180,6 +1551,25 @@ function applyFeatureStyle(f) {
       color: cssColor(p.strokeColor || '#4096FF', (p.strokeOpacity ?? 1) * 0.3),
       outlineColor: cssColor(p.strokeColor || '#4096FF', p.strokeOpacity ?? 1),
       outlineWidth: p.strokeWidth || 2
+    }
+    return
+  }
+
+  if (t === 'Text') {
+    const c = f.coords[0]
+    f.entity.position = Cartesian3.fromDegrees(c[0], c[1], c[2] ?? h)
+    // 用 canvas 渲染文字（Billboard）：Cesium Label 不支持背景边框，canvas 可完整支持
+    // 背景/边框（颜色、透明度、宽度、圆角）/文字描边/旋转
+    const { canvas, width, height } = createTextCanvas(p)
+    f.entity.billboard = {
+      image: canvas,
+      imageWidth: width,
+      imageHeight: height,
+      // 位置偏移（屏幕像素）：x 正=向右，y 正=向下
+      pixelOffset: new Cartesian2(p.textOffsetX || 0, p.textOffsetY || 0),
+      rotation: -CesiumMath.toRadians(p.textRotation || 0),
+      // 标注不被地形遮挡，始终可见
+      disableDepthTestDistance: Number.POSITIVE_INFINITY
     }
     return
   }
@@ -1254,7 +1644,7 @@ function applyFeatureStyle(f) {
 // ==================== 实体创建 ====================
 function createEntities(f) {
   const t = f.drawType
-  if (t === 'Point') {
+  if (t === 'Point' || t === 'Text') {
     f.entity = viewer.entities.add({ position: Cartesian3.fromDegrees(0, 0, 0) })
     f.entity.__drawFeature = f
   } else if (t === 'LineString') {
@@ -1354,9 +1744,15 @@ function applySelectionHighlight(f) {
   const p = f.styleParams
   const cyan = Color.fromCssColorString('#05f5ff')
   if (f.entity) {
-    f.entity.point.pixelSize = ((p.radius || 6) * 2) + 6
-    f.entity.point.outlineColor = cyan
-    f.entity.point.outlineWidth = 3
+    if (f.drawType === 'Text') {
+      // 文字标注：选中时用青色染色提示（取消选中会重设样式恢复原色）
+      const bb = f.entity.billboard
+      if (bb) bb.color = cyan
+    } else if (f.entity.point) {
+      f.entity.point.pixelSize = ((p.radius || 6) * 2) + 6
+      f.entity.point.outlineColor = cyan
+      f.entity.point.outlineWidth = 3
+    }
   }
   if (f.strokeEntity) {
     const cur = f.strokeEntity.polyline.width
@@ -1857,12 +2253,13 @@ function startDrawMode(type) {
   drawState = { type, points: [], mousePos: null, startPos: null, endPos: null, dragging: false }
   handler = new ScreenSpaceEventHandler(viewer.scene.canvas)
 
-  if (type === 'Point') {
+  if (type === 'Point' || type === 'Text') {
+    // 点 / 文字标注：单击落点即完成
     handler.setInputAction((movement) => {
       const pos = pickLngLat(movement.position)
       if (!pos) return
       const params = getCurrentParams()
-      const f = buildFeature('Point', params, [[pos.lng, pos.lat, pos.height]])
+      const f = buildFeature(type, params, [[pos.lng, pos.lat, pos.height]])
       selectedFeature.value = f
       isSelectPicked.value = false
       updatePanelFromFeature(f)
@@ -1952,6 +2349,27 @@ function onStyleChange() {
         params.gradientEndOpacity = gradientEndOpacity.value
       }
     }
+    if (isTextType.value) {
+      params.textContent = textContent.value
+      params.textFontSize = textFontSize.value
+      params.textBold = textBold.value
+      params.textColor = textColor.value
+      params.textRotation = textRotation.value
+      params.textOffsetX = textOffsetX.value
+      params.textOffsetY = textOffsetY.value
+      params.textOutlineEnabled = textOutlineEnabled.value
+      params.textOutlineColor = textOutlineColor.value
+      params.textOutlineWidth = textOutlineWidth.value
+      params.textBgEnabled = textBgEnabled.value
+      params.textBgColor = textBgColor.value
+      params.textBgOpacity = textBgOpacity.value
+      params.textPadding = textPadding.value
+      params.textBorderEnabled = textBorderEnabled.value
+      params.textBorderColor = textBorderColor.value
+      params.textBorderOpacity = textBorderOpacity.value
+      params.textBorderWidth = textBorderWidth.value
+      params.textBorderRadius = textBorderRadius.value
+    }
 
     f.styleParams = params
     applyFeatureStyle(f)
@@ -1988,6 +2406,26 @@ function updatePanelFromFeature(f) {
   if (params.gradientEndColor !== undefined) gradientEndColor.value = params.gradientEndColor
   if (params.gradientStartOpacity !== undefined) gradientStartOpacity.value = params.gradientStartOpacity
   if (params.gradientEndOpacity !== undefined) gradientEndOpacity.value = params.gradientEndOpacity
+  // 文字标注参数
+  if (params.textContent !== undefined) textContent.value = params.textContent
+  if (params.textFontSize !== undefined) textFontSize.value = params.textFontSize
+  if (params.textBold !== undefined) textBold.value = !!params.textBold
+  if (params.textColor !== undefined) textColor.value = params.textColor
+  if (params.textRotation !== undefined) textRotation.value = params.textRotation
+  if (params.textOffsetX !== undefined) textOffsetX.value = params.textOffsetX
+  if (params.textOffsetY !== undefined) textOffsetY.value = params.textOffsetY
+  if (params.textOutlineEnabled !== undefined) textOutlineEnabled.value = !!params.textOutlineEnabled
+  if (params.textOutlineColor !== undefined) textOutlineColor.value = params.textOutlineColor
+  if (params.textOutlineWidth !== undefined) textOutlineWidth.value = params.textOutlineWidth
+  if (params.textBgEnabled !== undefined) textBgEnabled.value = !!params.textBgEnabled
+  if (params.textBgColor !== undefined) textBgColor.value = params.textBgColor
+  if (params.textBgOpacity !== undefined) textBgOpacity.value = params.textBgOpacity
+  if (params.textPadding !== undefined) textPadding.value = params.textPadding
+  if (params.textBorderEnabled !== undefined) textBorderEnabled.value = !!params.textBorderEnabled
+  if (params.textBorderColor !== undefined) textBorderColor.value = params.textBorderColor
+  if (params.textBorderOpacity !== undefined) textBorderOpacity.value = params.textBorderOpacity
+  if (params.textBorderWidth !== undefined) textBorderWidth.value = params.textBorderWidth
+  if (params.textBorderRadius !== undefined) textBorderRadius.value = params.textBorderRadius
 
   nextTick(() => { isUpdatingPanel = false })
 }
@@ -2241,6 +2679,29 @@ onUnmounted(() => {
   line-height: 1.5;
   padding: 1px 0 2px 0;
   color: rgba(126, 232, 190, 0.68);
+}
+
+/* 文字标注控件 */
+.text-content-input {
+  width: 100%;
+  padding: 4px 6px;
+  font-size: 11px;
+  color: #bae0ff;
+  background: rgba(64, 150, 255, 0.08);
+  border: 1px solid rgba(64, 150, 255, 0.25);
+  border-radius: 4px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.text-content-input:focus {
+  border-color: #4096FF;
+  background: rgba(64, 150, 255, 0.14);
+  box-shadow: 0 0 6px rgba(64, 150, 255, 0.3);
+}
+
+.text-content-input::placeholder {
+  color: rgba(186, 224, 255, 0.35);
 }
 
 /* 开关按钮 */
