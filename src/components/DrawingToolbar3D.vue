@@ -20,8 +20,8 @@
           </button>
         </div>
 
-        <!-- 边线颜色 -->
-        <div class="style-row" v-if="hasStroke">
+        <!-- 边线颜色（点要素同样使用该颜色，与 2D 一致） -->
+        <div class="style-row" v-if="!isTextType">
           <label class="style-label">边线颜色</label>
           <div class="style-control">
             <input
@@ -46,7 +46,7 @@
         </div>
 
         <!-- 边线宽度 -->
-        <div class="style-row" v-if="hasStroke">
+        <div class="style-row" v-if="!isTextType">
           <label class="style-label">边线宽度</label>
           <div class="style-control">
             <input
@@ -61,7 +61,7 @@
         </div>
 
         <!-- 边线透明度 -->
-        <div class="style-row" v-if="hasStroke">
+        <div class="style-row" v-if="!isTextType">
           <label class="style-label">边线透明度</label>
           <div class="style-control">
             <input
@@ -143,10 +143,10 @@
           <div class="freehand-hint">按住 Shift + 左键拖动即可自由绘制，松开左键完成</div>
         </template>
 
-        <!-- ===== 边线描边（外边线） ===== -->
-        <div class="style-separator outline-sep" v-if="hasStroke">边线描边</div>
+        <!-- ===== 边线描边（外边线，点要素同样支持） ===== -->
+        <div class="style-separator outline-sep" v-if="!isTextType">边线描边</div>
 
-        <div class="style-row" v-if="hasStroke">
+        <div class="style-row" v-if="!isTextType">
           <label class="style-label">启用描边</label>
           <div class="style-control">
             <button
@@ -161,7 +161,7 @@
           </div>
         </div>
 
-        <template v-if="outlineEnabled && hasStroke">
+        <template v-if="outlineEnabled">
           <div class="style-row">
             <label class="style-label">描边颜色</label>
             <div class="style-control">
@@ -269,6 +269,61 @@
             <span class="range-value">{{ Math.round(featureRadius) }}</span>
           </div>
         </div>
+
+        <!-- ===== 点动态样式（与 2D 一致） ===== -->
+        <template v-if="isPointType">
+          <div class="style-separator animate-sep">动态样式</div>
+
+          <div class="style-row">
+            <label class="style-label">动态开关</label>
+            <div class="style-control">
+              <button
+                class="switch-toggle"
+                :class="{ active: pointAnimated }"
+                @click="toggleAnimate"
+                :title="pointAnimated ? '点击切换为静态样式' : '点击切换为动态样式'"
+              >
+                <span class="switch-knob"></span>
+              </button>
+              <span class="switch-text">{{ pointAnimated ? '动态' : '静态' }}</span>
+            </div>
+          </div>
+
+          <template v-if="pointAnimated">
+            <div class="style-row">
+              <label class="style-label">动画类型</label>
+              <div class="style-control">
+                <div class="anim-type-group">
+                  <button
+                    v-for="a in animTypes"
+                    :key="a.value"
+                    class="anim-type-btn"
+                    :class="{ active: pointAnimType === a.value }"
+                    @click="pointAnimType = a.value; onStyleChange()"
+                    :title="a.tip"
+                  >
+                    <i v-html="a.icon"></i>
+                    <span>{{ a.label }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="style-row">
+              <label class="style-label">动画速度</label>
+              <div class="style-control">
+                <input
+                  type="range"
+                  class="range-input"
+                  v-model.number="pointAnimSpeed"
+                  min="0.2" max="3" step="0.1"
+                  @input="onStyleChange"
+                />
+                <span class="range-value">{{ pointAnimSpeed }}x</span>
+              </div>
+            </div>
+          </template>
+        </template>
 
         <!-- 箭头专用控制 -->
         <template v-if="isArrow">
@@ -686,6 +741,8 @@ import {
   CameraEventType,
   PolylineDashMaterialProperty,
   ImageMaterialProperty,
+  ColorMaterialProperty,
+  CallbackProperty,
   Math as CesiumMath
 } from 'cesium'
 
@@ -775,6 +832,10 @@ const outlineEnabled = ref(false)
 const outlineColor = ref('#FFFFFF')
 const outlineWidth = ref(2)
 const outlineOpacity = ref(1)
+// 点动态样式参数（与 2D 一致）
+const pointAnimated = ref(false)
+const pointAnimType = ref('pulse')   // pulse 脉冲 | breathe 呼吸 | blink 闪烁
+const pointAnimSpeed = ref(1)
 // 箭头参数
 const arrowScale = ref(1)
 const arrowHeadWidth = ref(3)
@@ -833,9 +894,36 @@ function selectPresetColor(color, target) {
   onStyleChange()
 }
 
+// 动画类型定义（与 2D 一致）
+const animTypes = [
+  {
+    value: 'pulse',
+    label: '脉冲',
+    tip: '向外扩散的脉冲光圈',
+    icon: '<svg viewBox="0 0 20 20" width="18" height="18"><circle cx="10" cy="10" r="2.5" fill="currentColor"/><circle cx="10" cy="10" r="5" fill="none" stroke="currentColor" stroke-width="1.3" opacity="0.7"/><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.1" opacity="0.35"/></svg>'
+  },
+  {
+    value: 'breathe',
+    label: '呼吸',
+    tip: '圆点大小循环缩放',
+    icon: '<svg viewBox="0 0 20 20" width="18" height="18"><circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2" opacity="0.5"/><circle cx="10" cy="10" r="3.2" fill="currentColor" opacity="0.85"/></svg>'
+  },
+  {
+    value: 'blink',
+    label: '闪烁',
+    tip: '圆点透明度循环闪烁',
+    icon: '<svg viewBox="0 0 20 20" width="18" height="18"><circle cx="10" cy="10" r="4.5" fill="currentColor" opacity="0.25"/><circle cx="10" cy="10" r="2.5" fill="currentColor"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/></svg>'
+  }
+]
+
 // 开关切换
 function toggleOutline() {
   outlineEnabled.value = !outlineEnabled.value
+  onStyleChange()
+}
+
+function toggleAnimate() {
+  pointAnimated.value = !pointAnimated.value
   onStyleChange()
 }
 
@@ -890,6 +978,9 @@ const hasStroke = computed(() => {
 
 // 是否为文字标注
 const isTextType = computed(() => currentFeatureType.value === 'Text')
+
+// 是否为点要素（支持动态样式）
+const isPointType = computed(() => currentFeatureType.value === 'Point')
 
 // 是否是箭头类型
 const isArrow = computed(() => {
@@ -1492,6 +1583,182 @@ function ellipseRingMeters(center, rx, ry, h) {
   return ring
 }
 
+// ==================== 点样式（与 2D 一致：描边 + 动态动画） ====================
+// 像素半径基准（对应 2D 的 baseR = radius || strokeWidth * 3）
+function pointBaseRadius(p) {
+  const sw = p.strokeWidth || 2
+  return Math.max(1, p.radius || sw * 3)
+}
+
+// 呼吸系数：半径在 0.7~1.4 倍之间循环（与 2D 一致）
+function pointBreatheFactor(p, now) {
+  const w = (2 * Math.PI * (p.pointAnimSpeed || 1)) / 1800
+  return 1.05 + 0.35 * Math.sin(now * w)
+}
+
+// 闪烁系数（0.12 ~ 1，与 2D 一致）
+function pointBlinkFactor(p, now) {
+  const w = (2 * Math.PI * (p.pointAnimSpeed || 1)) / 1000
+  return 0.12 + 0.88 * (0.5 + 0.5 * Math.sin(now * w))
+}
+
+// 填充透明度（静态 0.3；闪烁时随明暗变化）
+function pointFillAlphaAt(p, now) {
+  const so = p.strokeOpacity !== undefined ? p.strokeOpacity : 1
+  if (p.pointAnimated && (p.pointAnimType || 'pulse') === 'blink') return so * 0.45 * pointBlinkFactor(p, now)
+  return so * 0.3
+}
+
+// 边线透明度（静态取 strokeOpacity；闪烁时随明暗变化）
+function pointStrokeAlphaAt(p, now) {
+  const so = p.strokeOpacity !== undefined ? p.strokeOpacity : 1
+  if (p.pointAnimated && (p.pointAnimType || 'pulse') === 'blink') return so * pointBlinkFactor(p, now)
+  return so
+}
+
+// 脉冲相位（0→1 循环，三圈错开 1/3 周期）
+function pointPulsePhase(p, index, now) {
+  const period = 1800 / (p.pointAnimSpeed || 1)
+  return ((now + (index * period) / 3) % period) / period
+}
+
+// 按时间驱动的属性（Cesium 每帧求值，实现动态样式）
+function timeProperty(getter) {
+  return new CallbackProperty(() => getter(performance.now()), false)
+}
+
+// 点位置处的米/像素换算：把屏幕像素半径换算为地面米制半径，
+// 使点及其光环以"地面圆"的形式呈现，旋转视角时与地面平行
+function metersPerPixel(position) {
+  const camera = viewer.camera
+  const canvas = viewer.scene.canvas
+  const distance = Cartesian3.distance(camera.positionWC, position)
+  const frustum = camera.frustum
+  let span
+  if (frustum.fovy !== undefined) {
+    span = 2 * distance * Math.tan(frustum.fovy * 0.5)
+  } else {
+    // 正交投影：视口高度即世界单位跨度
+    span = (frustum.top - frustum.bottom) || distance
+  }
+  return span / (canvas.clientHeight || 1)
+}
+
+// 贴地圆环坐标（米制半径 → 经纬度）
+function circlePositions(center, radiusMeters, h) {
+  return toCartesians(ellipseRingMeters(center, radiusMeters, radiusMeters, h), h)
+}
+
+// 点要素渲染：贴地圆面 + 圆环边线 + 描边外圈 + 脉冲光环
+// 直径/半径按相机比例换算为地面米，点始终平铺于地面（旋转视角不会立起来）
+function applyPointStyle(f, p) {
+  const c = f.coords[0]
+  const h = c[2] ?? f.height
+  const pos = Cartesian3.fromDegrees(c[0], c[1], h)
+  const center = { lng: c[0], lat: c[1] }
+  const sc = p.strokeColor || '#4096FF'
+  const sw = p.strokeWidth || 2
+  const so = p.strokeOpacity !== undefined ? p.strokeOpacity : 1
+  const baseR = pointBaseRadius(p)
+  const animated = !!p.pointAnimated
+  const animType = p.pointAnimType || 'pulse'
+  const breathe = animated && animType === 'breathe'
+  const blink = animated && animType === 'blink'
+
+  // 地面半径（米）：像素半径按相机比例换算为地面半径并缓存，
+  // 仅在"点大小/边线宽度"变化时重算，避免只调颜色/透明度时尺寸跳变
+  const radiusKey = `${baseR}`
+  if (f.pointRadiusKey !== radiusKey) {
+    const mppNow = metersPerPixel(pos)
+    f.pointRadiusKey = radiusKey
+    f.pointMetersPerPixel = mppNow
+    // 上限 20km，避免远视距下调样式产生夸张的大圆
+    f.pointRadiusMeters = Math.min(20000, Math.max(0.5, baseR * mppNow))
+  }
+  const mpp = f.pointMetersPerPixel
+  const dotR = f.pointRadiusMeters
+
+  // 半径取值（呼吸动画随时间缩放）
+  const radiusAt = now => (breathe ? dotR * pointBreatheFactor(p, now) : dotR)
+
+  // 填充：贴地圆面
+  f.fillEntity.polygon = {
+    hierarchy: breathe
+      ? timeProperty(now => circlePositions(center, radiusAt(now), h))
+      : circlePositions(center, dotR, h),
+    material: blink
+      ? new ColorMaterialProperty(timeProperty(now => cssColor(sc, pointFillAlphaAt(p, now))))
+      : cssColor(sc, so * 0.3),
+    // 贴地：圆面平铺在地形上，与地面平行
+    clampToGround: true
+  }
+
+  // 圆点边线：贴地圆环
+  f.strokeEntity.polyline = {
+    positions: breathe
+      ? timeProperty(now => circlePositions(center, radiusAt(now), h))
+      : circlePositions(center, dotR, h),
+    width: sw,
+    material: blink
+      ? new ColorMaterialProperty(timeProperty(now => cssColor(sc, pointStrokeAlphaAt(p, now))))
+      : cssColor(sc, so),
+    clampToGround: true
+  }
+
+  // 描边：外圈光环（环带覆盖 [dotR, dotR + outlineWidth 像素]，与 2D 一致）
+  if (p.outlineEnabled) {
+    if (!f.outlineEntity) {
+      f.outlineEntity = viewer.entities.add({})
+      f.outlineEntity.__drawFeature = f
+    }
+    const ow = p.outlineWidth || 2
+    const bandR = dotR + (ow * mpp) / 2
+    f.outlineEntity.show = true
+    f.outlineEntity.polyline = {
+      positions: breathe
+        ? timeProperty(now => circlePositions(center, radiusAt(now) + (ow * mpp) / 2, h))
+        : circlePositions(center, bandR, h),
+      width: Math.max(1, ow),
+      material: cssColor(p.outlineColor || '#FFFFFF', p.outlineOpacity !== undefined ? p.outlineOpacity : 1),
+      clampToGround: true
+    }
+  } else if (f.outlineEntity) {
+    f.outlineEntity.show = false
+  }
+
+  // 脉冲：三圈贴地扩散光环（与地面平行，错相位，越外越淡）
+  if (!f.pulseEntities) f.pulseEntities = []
+  const needPulse = animated && animType === 'pulse'
+  for (let i = 0; i < 3; i++) {
+    let e = f.pulseEntities[i]
+    // 非脉冲状态：不创建多余实体，已有的隐藏即可
+    if (!needPulse) {
+      if (e) e.show = false
+      continue
+    }
+    if (!e) {
+      e = viewer.entities.add({})
+      e.__drawFeature = f
+      f.pulseEntities[i] = e
+    }
+    e.show = true
+    e.polyline = {
+      positions: timeProperty(now => {
+        const t = pointPulsePhase(p, i, now)
+        const r = dotR + t * (dotR * 2.4 + 10 * mpp)
+        return circlePositions(center, Math.max(0.5, r), h)
+      }),
+      width: Math.max(1.2, sw * 0.9),
+      material: new ColorMaterialProperty(timeProperty(now => {
+        const t = pointPulsePhase(p, i, now)
+        return cssColor(sc, (1 - t) * (1 - t) * so * 0.95)
+      })),
+      // 贴地：光环始终与地面平行，不被地形遮挡
+      clampToGround: true
+    }
+  }
+}
+
 // ==================== 样式应用 ====================
 function getCurrentParams() {
   return {
@@ -1508,6 +1775,9 @@ function getCurrentParams() {
     outlineWidth: outlineWidth.value,
     outlineOpacity: outlineOpacity.value,
     radius: featureRadius.value,
+    pointAnimated: pointAnimated.value,
+    pointAnimType: pointAnimType.value,
+    pointAnimSpeed: pointAnimSpeed.value,
     arrowScale: arrowScale.value,
     arrowHeadWidth: arrowHeadWidth.value,
     gradientEnabled: gradientEnabled.value,
@@ -1544,14 +1814,7 @@ function applyFeatureStyle(f) {
   const h = f.height
 
   if (t === 'Point') {
-    const c = f.coords[0]
-    f.entity.position = Cartesian3.fromDegrees(c[0], c[1], c[2] ?? h)
-    f.entity.point = {
-      pixelSize: (p.radius || 6) * 2,
-      color: cssColor(p.strokeColor || '#4096FF', (p.strokeOpacity ?? 1) * 0.3),
-      outlineColor: cssColor(p.strokeColor || '#4096FF', p.strokeOpacity ?? 1),
-      outlineWidth: p.strokeWidth || 2
-    }
+    applyPointStyle(f, p)
     return
   }
 
@@ -1644,7 +1907,13 @@ function applyFeatureStyle(f) {
 // ==================== 实体创建 ====================
 function createEntities(f) {
   const t = f.drawType
-  if (t === 'Point' || t === 'Text') {
+  if (t === 'Point') {
+    // 点：贴地圆面（填充）+ 贴地圆环（边线）
+    f.fillEntity = viewer.entities.add({ polygon: {} })
+    f.fillEntity.__drawFeature = f
+    f.strokeEntity = viewer.entities.add({ polyline: {} })
+    f.strokeEntity.__drawFeature = f
+  } else if (t === 'Text') {
     f.entity = viewer.entities.add({ position: Cartesian3.fromDegrees(0, 0, 0) })
     f.entity.__drawFeature = f
   } else if (t === 'LineString') {
@@ -1692,7 +1961,7 @@ function buildFeature(drawType, params, coords, extra = {}) {
 }
 
 function removeFeature(f) {
-  const ents = [f.entity, f.fillEntity, f.strokeEntity]
+  const ents = [f.entity, f.fillEntity, f.strokeEntity, f.outlineEntity, ...(f.pulseEntities || [])]
   for (const e of ents) {
     if (e) {
       try {
@@ -1743,21 +2012,17 @@ function unselect() {
 function applySelectionHighlight(f) {
   const p = f.styleParams
   const cyan = Color.fromCssColorString('#05f5ff')
-  if (f.entity) {
-    if (f.drawType === 'Text') {
-      // 文字标注：选中时用青色染色提示（取消选中会重设样式恢复原色）
-      const bb = f.entity.billboard
-      if (bb) bb.color = cyan
-    } else if (f.entity.point) {
-      f.entity.point.pixelSize = ((p.radius || 6) * 2) + 6
-      f.entity.point.outlineColor = cyan
-      f.entity.point.outlineWidth = 3
-    }
+  if (f.entity && f.drawType === 'Text') {
+    // 文字标注：选中时用青色染色提示（取消选中会重设样式恢复原色）
+    const bb = f.entity.billboard
+    if (bb) bb.color = cyan
   }
   if (f.strokeEntity) {
     const cur = f.strokeEntity.polyline.width
     const w = (cur && typeof cur.getValue === 'function' ? cur.getValue() : cur) || p.strokeWidth || 2
     f.strokeEntity.polyline.width = w + 4
+    // 点要素：边线染成青色作为选中提示（取消选中后按样式参数重建）
+    if (f.drawType === 'Point') f.strokeEntity.polyline.material = cyan
   }
   if (f.fillEntity) {
     f.fillEntity.polygon.outline = true
@@ -2338,6 +2603,11 @@ function onStyleChange() {
     params.outlineWidth = outlineWidth.value
     params.outlineOpacity = outlineOpacity.value
     if (hasRadius.value) params.radius = featureRadius.value
+    if (isPointType.value) {
+      params.pointAnimated = pointAnimated.value
+      params.pointAnimType = pointAnimType.value
+      params.pointAnimSpeed = pointAnimSpeed.value
+    }
     if (isArrow.value) {
       params.arrowScale = arrowScale.value
       params.arrowHeadWidth = arrowHeadWidth.value
@@ -2399,6 +2669,9 @@ function updatePanelFromFeature(f) {
   outlineWidth.value = params.outlineWidth !== undefined ? params.outlineWidth : 2
   outlineOpacity.value = params.outlineOpacity !== undefined ? params.outlineOpacity : 1
   if (params.radius !== undefined) featureRadius.value = params.radius
+  pointAnimated.value = !!params.pointAnimated
+  pointAnimType.value = params.pointAnimType || 'pulse'
+  pointAnimSpeed.value = params.pointAnimSpeed !== undefined ? params.pointAnimSpeed : 1
   if (params.arrowScale !== undefined) arrowScale.value = params.arrowScale
   if (params.arrowHeadWidth !== undefined) arrowHeadWidth.value = params.arrowHeadWidth
   gradientEnabled.value = params.gradientEnabled !== undefined ? !!params.gradientEnabled : true
@@ -2672,6 +2945,54 @@ onUnmounted(() => {
 .style-separator.freehand-sep {
   color: rgba(126, 232, 190, 0.85);
   border-top-color: rgba(82, 220, 170, 0.22);
+}
+
+/* 分隔标题（点动态样式） */
+.style-separator.animate-sep {
+  color: rgba(126, 232, 190, 0.85);
+  border-top-color: rgba(82, 220, 170, 0.22);
+}
+
+/* 动画类型选择 */
+.anim-type-group {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+}
+
+.anim-type-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 2px;
+  background: rgba(82, 220, 170, 0.06);
+  border: 1px solid rgba(82, 220, 170, 0.15);
+  border-radius: 6px;
+  color: rgba(186, 224, 255, 0.6);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.anim-type-btn:hover {
+  color: #bae0ff;
+  background: rgba(82, 220, 170, 0.12);
+}
+
+.anim-type-btn.active {
+  color: #7ee8be;
+  background: rgba(82, 220, 170, 0.18);
+  border-color: rgba(82, 220, 170, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(82, 220, 170, 0.3);
+}
+
+.anim-type-btn i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
 }
 
 .freehand-hint {
