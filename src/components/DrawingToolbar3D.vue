@@ -815,7 +815,6 @@ const tools = [
 // ==================== 状态 ====================
 const activeTool = ref(null)
 const selectedFeature = ref(null)
-const isSelectPicked = ref(false)
 
 // 样式参数（与 2D 一致）
 const strokeColor = ref('#4096FF')
@@ -845,9 +844,9 @@ const gradientStartColor = ref('#FFB3B3')
 const gradientEndColor = ref('#D32F2F')
 const gradientStartOpacity = ref(0.3)
 const gradientEndOpacity = ref(1)
-// 文字标注参数（默认值与 2D 文字标注一致）
+// 文字标注参数（三维默认字号 25px）
 const textContent = ref('标注文字')
-const textFontSize = ref(14)
+const textFontSize = ref(25)
 const textBold = ref(false)
 const textColor = ref('#FFFFFF')
 const textRotation = ref(0)              // 旋转角度（度）
@@ -1115,7 +1114,7 @@ function hexToRgba(hex, alpha) {
 // 尺寸用 2x 物理像素绘制，通过 imageWidth/imageHeight 还原为逻辑大小，保证文字清晰
 function createTextCanvas(p) {
   const text = String(p.textContent || '标注文字')
-  const fontSize = p.textFontSize || 14
+  const fontSize = p.textFontSize || 25
   const font = `${p.textBold ? 'bold ' : ''}${fontSize}px sans-serif`
   const lines = text.split('\n')
   // 内边距：背景 / 边框共用同一盒子，统一用 textPadding
@@ -1995,7 +1994,7 @@ function startSelectMode() {
 function selectFeature(f) {
   if (selectedFeature.value && selectedFeature.value !== f) unselect()
   selectedFeature.value = f
-  isSelectPicked.value = true
+  // 刚选中：显示选中高亮
   applySelectionHighlight(f)
   updatePanelFromFeature(f)
 }
@@ -2004,27 +2003,26 @@ function unselect() {
   if (selectedFeature.value) {
     applyFeatureStyle(selectedFeature.value)
     selectedFeature.value = null
-    isSelectPicked.value = false
   }
 }
 
-// 选中高亮：青色描边 / 加粗 / 放大
+// 选中高亮：青色描边 / 加粗 / 放大（开始编辑样式后取消）
 function applySelectionHighlight(f) {
-  const p = f.styleParams
+  const p = f.styleParams || {}
   const cyan = Color.fromCssColorString('#05f5ff')
   if (f.entity && f.drawType === 'Text') {
     // 文字标注：选中时用青色染色提示（取消选中会重设样式恢复原色）
     const bb = f.entity.billboard
     if (bb) bb.color = cyan
   }
-  if (f.strokeEntity) {
+  if (f.strokeEntity && f.strokeEntity.polyline) {
     const cur = f.strokeEntity.polyline.width
     const w = (cur && typeof cur.getValue === 'function' ? cur.getValue() : cur) || p.strokeWidth || 2
     f.strokeEntity.polyline.width = w + 4
     // 点要素：边线染成青色作为选中提示（取消选中后按样式参数重建）
     if (f.drawType === 'Point') f.strokeEntity.polyline.material = cyan
   }
-  if (f.fillEntity) {
+  if (f.fillEntity && f.fillEntity.polygon) {
     f.fillEntity.polygon.outline = true
     f.fillEntity.polygon.outlineColor = cyan
     f.fillEntity.polygon.outlineWidth = 2
@@ -2405,7 +2403,6 @@ function finishClickSequence() {
     drawState.mousePos = null
     if (f) {
       selectedFeature.value = f
-      isSelectPicked.value = false
       updatePanelFromFeature(f)
     }
   } else if (pts.length > 0) {
@@ -2500,7 +2497,6 @@ function finishDrag() {
   drawState.endPos = null
   if (f) {
     selectedFeature.value = f
-    isSelectPicked.value = false
     updatePanelFromFeature(f)
   }
 }
@@ -2526,7 +2522,6 @@ function startDrawMode(type) {
       const params = getCurrentParams()
       const f = buildFeature(type, params, [[pos.lng, pos.lat, pos.height]])
       selectedFeature.value = f
-      isSelectPicked.value = false
       updatePanelFromFeature(f)
     }, ScreenSpaceEventType.LEFT_CLICK)
   } else if (CLICK_SEQUENCE_TYPES.includes(type)) {
@@ -2642,11 +2637,8 @@ function onStyleChange() {
     }
 
     f.styleParams = params
+    // 一旦开始编辑样式：取消选中高亮，预览效果即要素最终样式
     applyFeatureStyle(f)
-    // 仅当通过"选择"工具手动选中时，才叠加高亮效果
-    if (isSelectPicked.value) {
-      applySelectionHighlight(f)
-    }
   }
 }
 
@@ -2708,7 +2700,6 @@ function deleteSelectedFeature() {
   if (selectedFeature.value) {
     removeFeature(selectedFeature.value)
     selectedFeature.value = null
-    isSelectPicked.value = false
   }
 }
 
@@ -2717,7 +2708,6 @@ function clearDrawings() {
   for (const f of [...features.value]) removeFeature(f)
   features.value = []
   selectedFeature.value = null
-  isSelectPicked.value = false
 }
 
 function undoLast() {
@@ -2725,7 +2715,6 @@ function undoLast() {
   if (f) {
     if (selectedFeature.value === f) {
       selectedFeature.value = null
-      isSelectPicked.value = false
     }
     removeFeature(f)
   }
