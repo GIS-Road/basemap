@@ -824,19 +824,14 @@ import { useMapStore } from '../stores/mapStore'
 import Draw from 'ol/interaction/Draw'
 import Select from 'ol/interaction/Select'
 import Modify from 'ol/interaction/Modify'
-import Snap from 'ol/interaction/Snap'
-import PointerInteraction from 'ol/interaction/Pointer'
 import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
 import Style from 'ol/style/Style'
 import Stroke from 'ol/style/Stroke'
 import Fill from 'ol/style/Fill'
 import CircleStyle from 'ol/style/Circle'
-import RegularShape from 'ol/style/RegularShape'
 import Polygon from 'ol/geom/Polygon'
 import LineString from 'ol/geom/LineString'
-import Point from 'ol/geom/Point'
-import Feature from 'ol/Feature'
 
 const props = defineProps({
   map: { type: Object, default: null }
@@ -1187,11 +1182,6 @@ let drawInteraction = null
 let sketchLayer = null      // 绘制预览（sketch）所在图层，动画预览同样需要失效缓存
 let selectInteraction = null
 let modifyInteraction = null
-let snapInteraction = null     // 节点追踪：吸附已有要素的节点/边线
-let snapIndicatorLayer = null  // 捕捉点高亮图层
-let snapIndicatorFeature = null
-let selfSnapFeature = null     // 草图自身顶点吸附标记
-let selfSnapInteraction = null // 草图自身顶点吸附（绘制中吸附已落下的点）
 
 function initVectorLayer() {
   vectorSource = new VectorSource()
@@ -2087,174 +2077,6 @@ function applySelectionHighlight(feature) {
   feature.setStyle([...baseStyles, outerGlow, innerPulse])
 }
 
-// ==================== 节点追踪（绘制时吸附已有要素） ====================
-// 捕捉点高亮样式：顶点/端点吸附用圆点，边线吸附用方形
-const snapVertexStyle = new Style({
-  image: new CircleStyle({
-    radius: 5,
-    fill: new Fill({ color: 'rgba(5, 245, 255, 0.35)' }),
-    stroke: new Stroke({ color: '#05f5ff', width: 2 })
-  })
-})
-const snapEdgeStyle = new Style({
-  image: new RegularShape({
-    points: 4,
-    radius: 6,
-    angle: Math.PI / 4,
-    fill: new Fill({ color: 'rgba(5, 245, 255, 0.2)' }),
-    stroke: new Stroke({ color: '#05f5ff', width: 1.5 })
-  })
-})
-
-// 自身顶点吸附标记：与已有要素吸附同一高亮色（青色），形状用三角以作区分
-const selfSnapStyle = new Style({
-  image: new RegularShape({
-    points: 3,
-    radius: 7,
-    angle: 0,
-    fill: new Fill({ color: 'rgba(5, 245, 255, 0.35)' }),
-    stroke: new Stroke({ color: '#05f5ff', width: 2 })
-  })
-})
-
-// 捕捉标记图层：已有要素吸附标记 + 草图自身顶点吸附标记共用
-function ensureSnapLayer() {
-  if (!props.map || snapIndicatorLayer) return
-  snapIndicatorFeature = new Feature({ geometry: null })
-  selfSnapFeature = new Feature({ geometry: null })
-  snapIndicatorLayer = new VectorLayer({
-    source: new VectorSource({ features: [snapIndicatorFeature, selfSnapFeature] }),
-    style: feature => {
-      if (feature === selfSnapFeature) return selfSnapStyle
-      return feature.get('snapMode') === 'edge' ? snapEdgeStyle : snapVertexStyle
-    },
-    zIndex: 10001
-  })
-  snapIndicatorLayer.setMap(props.map)
-}
-
-function setupSnapTracking() {
-  if (!props.map || snapInteraction) return
-  ensureSnapLayer()
-  // 吸附交互：节点/端点 + 边线，容差 10px。
-  // 由 activateDrawMode 在 Draw 之后挂载：OL 按交互集合倒序分发事件，
-  // 位于末尾的 Snap 最先处理，改写事件坐标后仍返回 true 继续传给 Draw
-  snapInteraction = new Snap({
-    source: vectorSource,
-    vertex: true,
-    edge: true,
-    pixelTolerance: 10
-  })
-  snapInteraction.on('snap', e => {
-    snapIndicatorFeature.setGeometry(new Point(e.vertex))
-    snapIndicatorFeature.set('snapMode', e.segment ? 'edge' : 'vertex')
-  })
-  snapInteraction.on('unsnap', () => {
-    snapIndicatorFeature.setGeometry(null)
-  })
-  props.map.addInteraction(snapInteraction)
-}
-
-function teardownSnapTracking() {
-  if (snapInteraction && props.map) {
-    props.map.removeInteraction(snapInteraction)
-  }
-  snapInteraction = null
-  teardownSelfSnapTracking()
-  if (snapIndicatorFeature) {
-    snapIndicatorFeature.setGeometry(null)
-    snapIndicatorFeature = null
-  }
-  if (selfSnapFeature) {
-    selfSnapFeature.setGeometry(null)
-    selfSnapFeature = null
-  }
-  if (snapIndicatorLayer) {
-    snapIndicatorLayer.setMap(null)
-    snapIndicatorLayer = null
-  }
-}
-
-// ==================== 草图自吸附（绘制中吸附自身已落节点） ====================
-// 取当前草图的坐标序列（仅对坐标语义明确的自定义草图类型启用，
-// 矩形/椭圆/圆轮廓的几何由 geometryFunction 生成，顶点语义不同，跳过）
-function getSketchCoords() {
-  const tool = activeTool.value
-  if (!tool) return null
-  if (!['LineString', 'Polygon', 'Arrow', 'WindArrow', 'BattleArrow'].includes(tool)) return null
-  if (!drawInteraction) return null
-  const overlay = drawInteraction.getOverlay()
-  const source = overlay && overlay.getSource ? overlay.getSource() : null
-  if (!source || !source.getFeatures) return null
-  const features = source.getFeatures()
-  if (!features.length) return null
-  const geom = features[0].getGeometry()
-  if (!geom) return null
-  const type = geom.getType()
-  if (type === 'LineString') return geom.getCoordinates()
-  if (type === 'Polygon') return geom.getCoordinates()[0]
-  return null
-}
-
-// 草图自吸附：吸附到正在绘制要素已落下的顶点（多边形闭合、线接续）
-function applySelfSnap(evt) {
-  if (!selfSnapFeature || !evt.map) return
-  const coords = getSketchCoords()
-  if (!coords || coords.length < 2) {
-    selfSnapFeature.setGeometry(null)
-    return
-  }
-  const map = evt.map
-  // 用原始事件像素，避免受 Snap 已改写过的 evt.pixel 影响
-  const pixel = evt.originalEvent ? map.getEventPixel(evt.originalEvent) : evt.pixel
-  let best = null
-  let bestD2 = 12 * 12
-  // 最后一个坐标跟随鼠标，不能作为吸附目标；其余为已落下的顶点
-  for (let i = 0; i < coords.length - 1; i++) {
-    const p = map.getPixelFromCoordinate(coords[i])
-    if (!p) continue
-    const dx = p[0] - pixel[0]
-    const dy = p[1] - pixel[1]
-    const d2 = dx * dx + dy * dy
-    if (d2 <= bestD2) {
-      bestD2 = d2
-      best = { coord: coords[i], pixel: p }
-    }
-  }
-  if (!best) {
-    selfSnapFeature.setGeometry(null)
-    return
-  }
-  // 自吸附优先：直接覆盖 Snap 改写后的坐标
-  evt.coordinate = best.coord.slice()
-  evt.pixel = best.pixel
-  selfSnapFeature.setGeometry(new Point(best.coord))
-}
-
-class SketchSelfSnap extends PointerInteraction {
-  handleEvent(evt) {
-    applySelfSnap(evt)
-    return super.handleEvent(evt)
-  }
-}
-
-function setupSelfSnapTracking() {
-  if (!props.map || selfSnapInteraction) return
-  // handleDownEvent 返回 false、stopDown 返回 false：不拦截事件，继续传给 Draw
-  selfSnapInteraction = new SketchSelfSnap({
-    handleDownEvent: () => false,
-    stopDown: () => false
-  })
-  props.map.addInteraction(selfSnapInteraction)
-}
-
-function teardownSelfSnapTracking() {
-  if (selfSnapInteraction && props.map) {
-    props.map.removeInteraction(selfSnapInteraction)
-  }
-  selfSnapInteraction = null
-}
-
 // ==================== 绘制模式 ====================
 function activateDrawMode(type) {
   let drawOptions = {
@@ -2348,14 +2170,6 @@ function activateDrawMode(type) {
   })
 
   props.map.addInteraction(drawInteraction)
-
-  // 捕捉标记图层（已有要素吸附 + 草图自身顶点吸附共用）
-  ensureSnapLayer()
-  // 顺序很关键：OL 按交互集合倒序分发事件（后添加的先处理）
-  // ① 自身顶点吸附先加入 → 后执行，可覆盖 Snap 的结果（闭合/接续优先）
-  // ② Snap 最后加入 → 最先执行，完成对已有要素的吸附
-  setupSelfSnapTracking()
-  setupSnapTracking()
 
   const viewport = props.map.getViewport()
   viewport.style.cursor = 'crosshair'
@@ -2480,7 +2294,6 @@ function purgeDrawingInteractions() {
 }
 
 function deactivateTool() {
-  teardownSnapTracking()
   if (drawInteraction && props.map) {
     // 先中止绘制：清掉跟随鼠标移动的草图（含文字标注的预览文字），
     // 再移除交互，并把草图图层从地图上强制摘除，确保任何取消路径都干净
