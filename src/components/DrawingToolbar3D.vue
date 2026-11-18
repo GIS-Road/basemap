@@ -729,6 +729,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, markRaw } from 'vue'
 import { useMapStore } from '../stores/mapStore'
+import { useTempLayerStore } from '../stores/tempLayerStore'
 import {
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
@@ -751,6 +752,7 @@ const props = defineProps({
 })
 
 const mapStore = useMapStore()
+const tempStore = useTempLayerStore()
 const viewer = props.viewer
 
 // ==================== 工具定义（与 2D 绘制工具条完全一致） ====================
@@ -1740,7 +1742,7 @@ function applyPointStyle(f, p) {
       e.__drawFeature = f
       f.pulseEntities[i] = e
     }
-    e.show = true
+    e.show = !isFeatureHidden(f)
     e.polyline = {
       positions: timeProperty(now => {
         const t = pointPulsePhase(p, i, now)
@@ -1808,6 +1810,13 @@ function getCurrentParams() {
 
 // 将样式应用到逻辑要素（重建 geometry/材质）
 function applyFeatureStyle(f) {
+  // 隐藏 guard：若所属图层已被隐藏，跳过样式重建，只把 entities 设为不显示
+  const key = getLayerKey(f.drawType)
+  if (key && hiddenLayers[key]) {
+    featureEntities(f).forEach(e => { e.show = false })
+    return
+  }
+
   const p = f.styleParams
   const t = f.drawType
   const h = f.height
@@ -1956,6 +1965,8 @@ function buildFeature(drawType, params, coords, extra = {}) {
   // markRaw 阻止 Vue 深度代理 feature 及其 Cesium Entity 对象，
   // 否则 viewer.entities.contains(代理对象) 引用比较失败导致 remove 无效（清除/撤销失效）
   features.value.push(markRaw(f))
+  enforceLayerHidden(f)
+  syncTempMeta()
   return f
 }
 
@@ -1974,6 +1985,159 @@ function removeFeature(f) {
   }
   const idx = features.value.indexOf(f)
   if (idx > -1) features.value.splice(idx, 1)
+  syncTempMeta()
+}
+
+// ==================== 临时图层（按要素类型分四个图层） ====================
+const TEMP_LAYER_IDS = {
+  point: '3d-temp-point',
+  line: '3d-temp-line',
+  polygon: '3d-temp-polygon',
+  label: '3d-temp-label'
+}
+
+const FEATURE_TYPES = {
+  POINT: ['Point'],
+  LINE: ['LineString', 'Arrow', 'WindArrow', 'BattleArrow'],
+  POLYGON: ['Polygon', 'Rectangle', 'Ellipse', 'CircleOutline'],
+  LABEL: ['Text']
+}
+
+const hiddenLayers = { point: false, line: false, polygon: false, label: false }
+
+function getLayerKey(drawType) {
+  if (FEATURE_TYPES.POINT.includes(drawType)) return 'point'
+  if (FEATURE_TYPES.LINE.includes(drawType)) return 'line'
+  if (FEATURE_TYPES.POLYGON.includes(drawType)) return 'polygon'
+  if (FEATURE_TYPES.LABEL.includes(drawType)) return 'label'
+  return null
+}
+
+function isAnnotationFeature(f) {
+  return f.drawType === 'Text'
+}
+
+function matchFeatureToLayer(f, key) {
+  return getLayerKey(f.drawType) === key
+}
+
+function isFeatureHidden(f) {
+  const key = getLayerKey(f.drawType)
+  return key ? hiddenLayers[key] : false
+}
+
+function featureEntities(f) {
+  return [f.entity, f.fillEntity, f.strokeEntity, f.outlineEntity, ...(f.pulseEntities || [])].filter(Boolean)
+}
+
+function countLayer(key) {
+  return features.value.filter(f => matchFeatureToLayer(f, key)).length
+}
+
+function syncTempMeta() {
+  for (const key of Object.keys(TEMP_LAYER_IDS)) {
+    tempStore.setLayerMeta(TEMP_LAYER_IDS[key], {
+      count: countLayer(key),
+      visible: !hiddenLayers[key]
+    })
+  }
+}
+
+function setLayerVisible(key, visible) {
+  hiddenLayers[key] = !visible
+  features.value
+    .filter(f => matchFeatureToLayer(f, key))
+    .forEach(f => featureEntities(f).forEach(e => { e.show = visible }))
+  syncTempMeta()
+}
+
+function zoomLayer(key) {
+  if (!viewer || viewer.isDestroyed()) return
+  const entities = features.value
+    .filter(f => matchFeatureToLayer(f, key))
+    .flatMap(f => featureEntities(f))
+  if (!entities.length) return
+  viewer.flyTo(entities.length === 1 ? entities[0] : entities, { duration: 1.0 })
+}
+
+function clearLayer(key) {
+  const targets = features.value.filter(f => matchFeatureToLayer(f, key))
+  for (const f of targets) {
+    if (selectedFeature.value === f) selectedFeature.value = null
+    removeFeature(f)
+  }
+  syncTempMeta()
+}
+
+function registerTempLayers() {
+  tempStore.registerLayer({
+    id: TEMP_LAYER_IDS.point,
+    name: 'PointLayer',
+    category: 'draw',
+    mode: '3d',
+    owner: '3d',
+    count: countLayer('point'),
+    visible: !hiddenLayers.point,
+    handlers: {
+      toggle: (visible) => setLayerVisible('point', visible),
+      zoom: () => zoomLayer('point'),
+      clear: () => clearLayer('point')
+    }
+  })
+  tempStore.registerLayer({
+    id: TEMP_LAYER_IDS.line,
+    name: 'LineLayer',
+    category: 'draw',
+    mode: '3d',
+    owner: '3d',
+    count: countLayer('line'),
+    visible: !hiddenLayers.line,
+    handlers: {
+      toggle: (visible) => setLayerVisible('line', visible),
+      zoom: () => zoomLayer('line'),
+      clear: () => clearLayer('line')
+    }
+  })
+  tempStore.registerLayer({
+    id: TEMP_LAYER_IDS.polygon,
+    name: 'PolygonLayer',
+    category: 'draw',
+    mode: '3d',
+    owner: '3d',
+    count: countLayer('polygon'),
+    visible: !hiddenLayers.polygon,
+    handlers: {
+      toggle: (visible) => setLayerVisible('polygon', visible),
+      zoom: () => zoomLayer('polygon'),
+      clear: () => clearLayer('polygon')
+    }
+  })
+  tempStore.registerLayer({
+    id: TEMP_LAYER_IDS.label,
+    name: 'LabelLayer',
+    category: 'annotation',
+    mode: '3d',
+    owner: '3d',
+    count: countLayer('label'),
+    visible: !hiddenLayers.label,
+    handlers: {
+      toggle: (visible) => setLayerVisible('label', visible),
+      zoom: () => zoomLayer('label'),
+      clear: () => clearLayer('label')
+    }
+  })
+}
+
+function unregisterTempLayers() {
+  for (const id of Object.values(TEMP_LAYER_IDS)) {
+    tempStore.unregisterLayer(id, '3d')
+  }
+}
+
+// 新建要素时若所属图层处于隐藏状态，保持隐藏
+function enforceLayerHidden(f) {
+  if (!isFeatureHidden(f)) return
+  featureEntities(f).forEach(e => { e.show = false })
 }
 
 // ==================== 选择模式 ====================
@@ -2544,6 +2708,9 @@ function activateTool(type) {
   mapStore.setDrawingActive(true)
   activeTool.value = type
 
+  // 开始绘制时自动打开临时图层对话框
+  if (type !== 'Select') tempStore.openDialog()
+
   // 箭头大小按类型给默认值（军标箭头默认 5x，其余箭头 1x）
   if (ARROW_TYPES.includes(type)) arrowScale.value = type === 'BattleArrow' ? 5 : 1
 
@@ -2744,6 +2911,10 @@ function handleKeydown(e) {
 
 // ==================== 生命周期 ====================
 onMounted(() => {
+  // 初始化临时图层状态
+  for (const key of Object.keys(hiddenLayers)) hiddenLayers[key] = false
+  registerTempLayers()
+
   // 开启深度测试，使 scene.pickPosition 能拾取地形高度（绘制要素贴合地形）
   if (viewer && viewer.scene && viewer.scene.globe) {
     savedDepthTest = viewer.scene.globe.depthTestAgainstTerrain
@@ -2757,6 +2928,7 @@ onMounted(() => {
 onUnmounted(() => {
   deactivateTool()
   teardownFreehand()
+  unregisterTempLayers()
   document.removeEventListener('keydown', handleKeydown)
   if (viewer && !viewer.isDestroyed() && viewer.scene && viewer.scene.globe) {
     viewer.scene.globe.depthTestAgainstTerrain = savedDepthTest

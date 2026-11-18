@@ -139,6 +139,9 @@
           :viewer="viewer3d"
           class="draw-toolbar-panel"
         />
+
+        <!-- 临时图层对话框（绘制/量测/标注，开始绘制时自动打开） -->
+        <TempLayerDialog />
       </main>
     </div>
   </div>
@@ -154,6 +157,7 @@ import LayerTree from './components/LayerTree.vue'
 import MapToggle from './components/MapToggle.vue'
 import DrawingToolbar from './components/DrawingToolbar.vue'
 import DrawingToolbar3D from './components/DrawingToolbar3D.vue'
+import TempLayerDialog from './components/TempLayerDialog.vue'
 import {createPulseEffect} from "@/utils/olTool.js";
 
 const mapStore = useMapStore()

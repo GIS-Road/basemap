@@ -821,11 +821,14 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useMapStore } from '../stores/mapStore'
+import { useTempLayerStore } from '../stores/tempLayerStore'
+import { createEmpty, extend, isEmpty } from 'ol/extent'
 import Draw from 'ol/interaction/Draw'
 import Select from 'ol/interaction/Select'
 import Modify from 'ol/interaction/Modify'
 import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
+import Feature from 'ol/Feature'
 import Style from 'ol/style/Style'
 import Stroke from 'ol/style/Stroke'
 import Fill from 'ol/style/Fill'
@@ -838,6 +841,7 @@ const props = defineProps({
 })
 
 const mapStore = useMapStore()
+const tempStore = useTempLayerStore()
 
 // ==================== 工具定义 ====================
 const tools = [
@@ -1184,6 +1188,10 @@ let selectInteraction = null
 let modifyInteraction = null
 
 function initVectorLayer() {
+  // 重置临时图层隐藏状态
+  for (const key of Object.keys(hiddenLayers)) hiddenLayers[key] = false
+  hiddenFeatureStyles.clear()
+
   vectorSource = new VectorSource()
   vectorLayer = new VectorLayer({
     source: vectorSource,
@@ -1193,6 +1201,225 @@ function initVectorLayer() {
   if (props.map) {
     props.map.addLayer(vectorLayer)
   }
+
+  // 要素增删时同步临时图层的数量/可见性
+  vectorSource.on(['addfeature', 'removefeature', 'clear'], (event) => {
+    // setLayerVisible / clearLayer / enforceLayerHidden 内部操作时完全忽略事件，
+    // 让这些函数自己在收尾处精确调一次 syncTempMeta，避免中间态把 count 写成 0
+    if (_layerSyncing) return
+
+    if (event.type === 'removefeature' && event.feature) {
+      // 只有 Delete 键等外部删除时才清理暂存区引用
+      for (const [k, arr] of hiddenFeatureStyles) {
+        const idx = arr.indexOf(event.feature)
+        if (idx > -1) arr.splice(idx, 1)
+      }
+    } else if (event.type === 'clear') {
+      hiddenFeatureStyles.clear()
+    }
+
+    syncTempMeta()
+  })
+
+  registerTempLayers()
+}
+
+// ==================== 临时图层（按要素类型分四个图层） ====================
+const TEMP_LAYER_IDS = {
+  point: '2d-temp-point',
+  line: '2d-temp-line',
+  polygon: '2d-temp-polygon',
+  label: '2d-temp-label'
+}
+
+const FEATURE_TYPES = {
+  POINT: ['Point'],
+  LINE: ['LineString', 'Arrow', 'WindArrow', 'BattleArrow'],
+  POLYGON: ['Polygon', 'Rectangle', 'Ellipse', 'CircleOutline'],
+  LABEL: ['Text']
+}
+
+const hiddenLayers = { point: false, line: false, polygon: false, label: false }
+const hiddenFeatureStyles = new Map()
+let _layerSyncing = false  // setLayerVisible 内部操作时屏蔽 add/removefeature 事件回调的干扰
+
+function getLayerKey(drawType) {
+  if (FEATURE_TYPES.POINT.includes(drawType)) return 'point'
+  if (FEATURE_TYPES.LINE.includes(drawType)) return 'line'
+  if (FEATURE_TYPES.POLYGON.includes(drawType)) return 'polygon'
+  if (FEATURE_TYPES.LABEL.includes(drawType)) return 'label'
+  return null
+}
+
+function matchFeatureToLayer(feature, key) {
+  return getLayerKey(feature.get('drawType')) === key
+}
+
+function countLayer(key) {
+  if (!vectorSource) return 0
+  const inSource = vectorSource.getFeatures().filter(f => matchFeatureToLayer(f, key)).length
+  const hidden = (hiddenFeatureStyles.get(key) || []).length
+  return inSource + hidden
+}
+
+function syncTempMeta() {
+  if (!vectorSource) return
+  for (const key of Object.keys(TEMP_LAYER_IDS)) {
+    tempStore.setLayerMeta(TEMP_LAYER_IDS[key], {
+      count: countLayer(key),
+      visible: !hiddenLayers[key]
+    })
+  }
+}
+
+function clearSelectionForFeatures(features) {
+  if (!selectInteraction) return
+  const sel = selectInteraction.getFeatures()  // Collection，没有 .has()，要用 getArray().includes()
+  const arr = sel.getArray()
+  let changed = false
+  for (const f of features) {
+    if (arr.includes(f)) {
+      sel.remove(f)
+      changed = true
+    }
+  }
+  if (changed) {
+    selectedFeature.value = null
+    isSelectPicked.value = false
+    isStyleEditing.value = false
+  }
+}
+
+function setLayerVisible(key, visible) {
+  hiddenLayers[key] = !visible
+  if (!vectorSource) return
+
+  const features = vectorSource.getFeatures().filter(f => matchFeatureToLayer(f, key))
+
+  _layerSyncing = true
+  if (!visible) {
+    clearSelectionForFeatures(features)
+    // 先从 source 移除，再暂存——避免 removefeature 事件回调把暂存区清空
+    for (const f of features) {
+      vectorSource.removeFeature(f)
+    }
+    hiddenFeatureStyles.set(key, features)
+  } else {
+    const saved = hiddenFeatureStyles.get(key) || []
+    for (const f of saved) {
+      vectorSource.addFeature(f)
+    }
+    hiddenFeatureStyles.delete(key)
+  }
+  _layerSyncing = false
+
+  invalidateLayerStyles()
+  if (props.map) props.map.render()
+  syncTempMeta()
+}
+
+function zoomLayer(key) {
+  if (!vectorSource || !props.map) return
+  const extent = createEmpty()
+  const features = vectorSource.getFeatures().filter(f => matchFeatureToLayer(f, key))
+  for (const feature of features) {
+    const geom = feature.getGeometry()
+    if (geom) extend(extent, geom.getExtent())
+  }
+  if (isEmpty(extent)) return
+  props.map.getView().fit(extent, { padding: [80, 80, 80, 80], duration: 500, maxZoom: 18 })
+}
+
+function clearLayer(key) {
+  if (!vectorSource) return
+  // 收集：source 里的 + hiddenFeatureStyles 里暂存的
+  const inSource = vectorSource.getFeatures().filter(f => matchFeatureToLayer(f, key))
+  const hidden = hiddenFeatureStyles.get(key) || []
+  clearSelectionForFeatures([...inSource, ...hidden])
+  _layerSyncing = true
+  for (const f of inSource) vectorSource.removeFeature(f)
+  hiddenFeatureStyles.delete(key)
+  _layerSyncing = false
+  syncAnimationLoop()
+  syncTempMeta()
+}
+
+function registerTempLayers() {
+  tempStore.registerLayer({
+    id: TEMP_LAYER_IDS.point,
+    name: 'PointLayer',
+    category: 'draw',
+    mode: '2d',
+    owner: '2d',
+    count: countLayer('point'),
+    visible: !hiddenLayers.point,
+    handlers: {
+      toggle: (visible) => setLayerVisible('point', visible),
+      zoom: () => zoomLayer('point'),
+      clear: () => clearLayer('point')
+    }
+  })
+  tempStore.registerLayer({
+    id: TEMP_LAYER_IDS.line,
+    name: 'LineLayer',
+    category: 'draw',
+    mode: '2d',
+    owner: '2d',
+    count: countLayer('line'),
+    visible: !hiddenLayers.line,
+    handlers: {
+      toggle: (visible) => setLayerVisible('line', visible),
+      zoom: () => zoomLayer('line'),
+      clear: () => clearLayer('line')
+    }
+  })
+  tempStore.registerLayer({
+    id: TEMP_LAYER_IDS.polygon,
+    name: 'PolygonLayer',
+    category: 'draw',
+    mode: '2d',
+    owner: '2d',
+    count: countLayer('polygon'),
+    visible: !hiddenLayers.polygon,
+    handlers: {
+      toggle: (visible) => setLayerVisible('polygon', visible),
+      zoom: () => zoomLayer('polygon'),
+      clear: () => clearLayer('polygon')
+    }
+  })
+  tempStore.registerLayer({
+    id: TEMP_LAYER_IDS.label,
+    name: 'LabelLayer',
+    category: 'annotation',
+    mode: '2d',
+    owner: '2d',
+    count: countLayer('label'),
+    visible: !hiddenLayers.label,
+    handlers: {
+      toggle: (visible) => setLayerVisible('label', visible),
+      zoom: () => zoomLayer('label'),
+      clear: () => clearLayer('label')
+    }
+  })
+}
+
+function unregisterTempLayers() {
+  for (const id of Object.values(TEMP_LAYER_IDS)) {
+    tempStore.unregisterLayer(id, '2d')
+  }
+}
+
+// 新建要素时若所属图层处于隐藏状态，立即从 source 移除（暂存到 hiddenFeatureStyles）
+function enforceLayerHidden(feature) {
+  const key = getLayerKey(feature.get('drawType'))
+  if (!key || !hiddenLayers[key]) return
+  _layerSyncing = true
+  vectorSource.removeFeature(feature)
+  const arr = hiddenFeatureStyles.get(key) || []
+  arr.push(feature)
+  hiddenFeatureStyles.set(key, arr)
+  _layerSyncing = false
+  syncTempMeta()
 }
 
 // ==================== 样式工具函数 ====================
@@ -1943,6 +2170,9 @@ function activateTool(type) {
 
   mapStore.setDrawingActive(true)
 
+  // 开始绘制时自动打开临时图层对话框，便于查看落图结果
+  if (type !== 'Select') tempStore.openDialog()
+
   // 箭头大小按类型给默认值（军标箭头默认 5x，其余箭头 1x）
   if (ARROW_TYPES.includes(type)) arrowScale.value = type === 'BattleArrow' ? 5 : 1
 
@@ -2150,6 +2380,7 @@ function activateDrawMode(type) {
 
     feature.set('styleParams', params)
     applyFeatureStyle(feature)
+    enforceLayerHidden(feature)
     syncAnimationLoop()
 
     // 绘制完成后自动选中要素，使样式面板可编辑（非选择工具选中，不叠加高亮）
@@ -2552,6 +2783,7 @@ onMounted(() => {
 onUnmounted(() => {
   deactivateTool()
   stopAnimationLoop()
+  unregisterTempLayers()
   if (vectorLayer && props.map) {
     props.map.removeLayer(vectorLayer)
   }
