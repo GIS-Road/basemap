@@ -457,8 +457,8 @@ const layers = [
       },
       {
         "id": "gaode_image",
-        "label": "高德卫星图(GJC02)",
-        "name": "高德卫星图(GJC02)",
+        "label": "高德卫星图(GJC02)（有偏移）",
+        "name": "高德卫星图(GJC02)（有偏移）",
         "url": `https://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}`,
         "group": "image",
         "type": "image",
@@ -467,17 +467,29 @@ const layers = [
         "zoom": ""
       },
       {
-        "id": "bing_image",
-        "label": "影像_Bing",
-        "name": "影像_Bing",
-        // "url": "http://ecn.t{0_3}.tiles.virtualearth.net/tiles/a{q}.jpeg?g=7786",
-        "url": "http://ecn.t3.tiles.virtualearth.net/tiles/a{q}.ipeg?g=0&dir=dir n'",
+        "id": "baidu_image",
+        "label": "百度卫星影像",
+        "name": "百度卫星影像",
+        "url": `https://maponline{s}.bdimg.com/starpic/?qt=satepc&u=x={x};y={y};z={z};v=009;type=sate&fm=46`,
         "group": "image",
         "type": "image",
-        "serviceType": "xyz",
+        "serviceType": "baidu",
         "visible": false,
         "zoom": ""
       },
+
+      // {
+      //   "id": "bing_image",
+      //   "label": "必应影像",
+      //   "name": "影像_Bing",
+      //   // "url": "http://ecn.t{0_3}.tiles.virtualearth.net/tiles/a{q}.jpeg?g=7786",
+      //   "url": "http://ecn.t3.tiles.virtualearth.net/tiles/a{q}.ipeg?g=0&dir=dir n'",
+      //   "group": "image",
+      //   "type": "image",
+      //   "serviceType": "xyz",
+      //   "visible": false,
+      //   "zoom": ""
+      // },
       {
         "id": "google_origin_image",
         "label": "影像_谷歌原版影像",
@@ -491,8 +503,8 @@ const layers = [
       },
       {
         "id": "google_image_hybrid",
-        "label": "谷歌卫星混合图层(GCJ02)",
-        "name": "谷歌卫星混合图层(GCJ02)",
+        "label": "谷歌卫星混合图层(GCJ02)（有偏移）",
+        "name": "谷歌卫星混合图层(GCJ02)（有偏移）",
         "url": `http://mt.google.com/vt?lyrs=s,m&gl=CN&x={x}&y={y}&z={z}`,
         "group": "image",
         "type": "image",
@@ -513,7 +525,7 @@ const layers = [
     "children": [
       {
         "id": "tdt_vector",
-        "label": "天地图矢量",
+        "label": "天地图矢量图层",
         "name": "tianditu_vec",
         "url": `https://t{0-7}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}&tk=${CONFIG.VITE_APP_TDT_TOKEN}`,
         "group": "vector",
@@ -732,6 +744,29 @@ const layers = [
         "visible": false,
         "zoom": ""
       },
+
+      {
+        "id": "dark_street_bing",
+        "label": "必应暗色街道地图（有偏移）",
+        "name": "dark_street_bing",
+        "url": `https://t{0-3}.dynamic.tiles.ditu.live.com/comp/ch/{q}?mkt=zh-CN&ur=cn&it=G,RL&n=z&og=804&cstl=vbd`,
+        "group": "road_net",
+        "type": "road",
+        "serviceType": "bingService",
+        "visible": false,
+        "zoom": ""
+      },
+      {
+        "id": "colorful_street_bing",
+        "label": "必应彩色街道地图（有偏移）",
+        "name": "colorful_street_bing",
+        "url": `https://t{0-3}.dynamic.tiles.ditu.live.com/comp/ch/{q}?mkt=zh-CN&ur=cn&it=G,RL&n=z&og=804&cstl=vb`,
+        "group": "road_net",
+        "type": "road",
+        "serviceType": "bingService",
+        "visible": false,
+        "zoom": ""
+      },
       // {
       //   "id": "Streets_overlay_layer_by_EOX",
       //   "label": "Streets_overlay_layer_by_EOX",
@@ -804,6 +839,17 @@ const layers = [
         "label": "天地图矢量注记",
         "name": "tdt_vector_label",
         "url": `https://t{0-7}.tianditu.gov.cn/DataServer?T=cva_w&x={x}&y={y}&l={z}&tk=${CONFIG.VITE_APP_TDT_TOKEN}`,
+        "group": "anotation",
+        "type": "anotation",
+        "serviceType": "xyz",
+        "visible": false,
+        "zoom": ""
+      },
+      {
+        "id": "tdt_image_label",
+        "label": "天地图影像注记",
+        "name": "tdt_image_label",
+        "url": `https://t{0-7}.tianditu.gov.cn/DataServer?T=cia_w&x={x}&y={y}&l={z}&tk=${CONFIG.VITE_APP_TDT_TOKEN}`,
         "group": "anotation",
         "type": "anotation",
         "serviceType": "xyz",

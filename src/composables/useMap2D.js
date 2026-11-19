@@ -12,6 +12,48 @@ import Zoom from 'ol/control/Zoom'
 import Attribution from 'ol/control/Attribution'
 
 import CONFIG from "@/config/config.js"
+import TileGrid from 'ol/tilegrid/TileGrid'
+import {
+  webMercatorToBaiduMercator,
+  baiduMercatorToWebMercator,
+  BAIDU_EXTENT
+} from '@/utils/baiduTile.js'
+import { tileXYToQuadKey } from '@/utils/quadkey.js'
+
+// ====================== 百度 BD09MC（百度墨卡托）投影注册 ======================
+// 百度瓦片不使用 Web Mercator：其墨卡托建立在 BD-09 经纬度之上且为自定义分段多项式投影，
+// 与 EPSG:3857 的米数不一致（中纬度 y 相差约数十公里、比例差约 1.5%）。
+// 若把百度瓦片网格直接套在 3857 上，瓦片索引会与地理位置整体错位。
+// 因此注册独立投影，由 OL 对百度瓦片自动做瓦片重投影（ReprojTile）到 3857 视图。
+const BAIDU_MIN_ZOOM = 1 // 百度卫星瓦片最低可用级别（z=0 服务端返回占位图）
+const BAIDU_MAX_ZOOM = 18
+
+const baiduProjection = new Projection({
+  code: 'BD09MC',
+  units: 'm',
+  extent: BAIDU_EXTENT, // 东经 0~180°、北纬 0~74°：百度影像实际可服务范围
+  worldExtent: [0, 0, 180, 74],
+  global: false
+})
+addProjection(baiduProjection)
+
+addCoordinateTransforms(
+  'EPSG:3857',
+  baiduProjection,
+  (coord) => webMercatorToBaiduMercator(coord),
+  (coord) => baiduMercatorToWebMercator(coord)
+)
+
+// 百度瓦片网格：z 级分辨率 = 2^(18-z) 米/像素（BD09MC 米），原点在世界中心 (0,0)
+const baiduResolutions = []
+for (let z = BAIDU_MIN_ZOOM; z <= BAIDU_MAX_ZOOM; z++) {
+  baiduResolutions.push(Math.pow(2, 18 - z))
+}
+const baiduTileGrid = new TileGrid({
+  origin: [0, 0],
+  resolutions: baiduResolutions,
+  tileSize: [256, 256]
+})
 
 // ====================== 注册 EPSG:4490 坐标系 (CGCS2000) ======================
 // 无需外部 proj4 库，通过坐标变换链实现 EPSG:4490 ↔ EPSG:4326 ↔ EPSG:3857
@@ -68,20 +110,7 @@ const BASE_MAP_SOURCES = {
 }
 
 // ====================== Bing Maps quadkey 转换 ======================
-// Bing 瓦片使用 quadkey（四叉键）寻址，每位编码 0/1/2/3 = 左上/右上/左下/右下
-// OL 的 ol/source/XYZ 原生仅替换 {z}{x}{y}{-y}，不识别 {q}，故需手动转换
-// Bing 与 Google/OSM 同为 Web Mercator + 左上角原点，y 无需翻转
-function tileXYToQuadKey(x, y, z) {
-  let quadKey = ''
-  for (let i = z; i > 0; i--) {
-    let digit = 0
-    const mask = 1 << (i - 1)
-    if ((x & mask) !== 0) digit++
-    if ((y & mask) !== 0) digit += 2
-    quadKey += digit
-  }
-  return quadKey
-}
+// quadkey 换算已抽到 utils/quadkey.js（2D/3D 共用）
 
 export function useMap2D() {
   const mapInstance = ref(null)
@@ -239,28 +268,57 @@ export function useMap2D() {
         opaque: true,
         crossOrigin: 'anonymous'
       })
-    } else if (serviceType === 'xyz') {
+    } else if (serviceType === 'baidu') {
+      // 百度瓦片：source 投影为 BD09MC（与 view 的 3857 不同时 OL 自动做瓦片重投影）
+      // 瓦片索引 = floor(BD09MC 米 / (256 * 2^(18-z)))，x 向东为正、y 向北为正；
+      // OL tileGrid 的 y 轴向下（origin [0,0] 起算），故 y 需翻转：baiduY = -y - 1
+      // 百度服务端仅提供 x>=0 且 y>=0 的瓦片（东经 0~180°、北纬区域），其余返回占位图
       source = new XYZ({
-        opaque: true,
-        url,
-        crossOrigin: 'anonymous'
-      })
-    } else if (url.includes('{q}')) {
-      // Bing Maps quadkey 寻址：{q} 不被 OL 原生支持，用 tileUrlFunction 转换
-      source = new XYZ({
+        projection: baiduProjection,
+        tileGrid: baiduTileGrid,
+        wrapX: false,
         crossOrigin: 'anonymous',
         tileUrlFunction: (tileCoord) => {
+          if (!tileCoord) return undefined
+          const [zIdx, x, y] = tileCoord
+          if (zIdx == null || x == null || y == null) return undefined
+          const baiduY = -y - 1
+          if (x < 0 || baiduY < 0) return undefined
+          // 子域轮换：百度目前仅 maponline0 ~ maponline3 存活
+          const subdomain = Math.abs(x + baiduY) % 4
+          return url
+            .replace(/\{x\}/g, String(x))
+            .replace(/\{y\}/g, String(baiduY))
+            .replace(/\{z\}/g, String(zIdx + BAIDU_MIN_ZOOM))
+            .replace(/\{s\}/g, String(subdomain))
+        }
+      })
+    } else if (serviceType === 'bingService' || url.includes('{q}')) {
+      // Bing 系瓦片（必应中国 ditu.live.com / virtualearth）：
+      // {q} 为 quadkey 四叉键寻址，OL 原生仅替换 {z}{x}{y}{-y}，需手动转换；
+      // 子域名轮换 {0-3} / {0-7} 等按 (x+y+z) hash 分担请求
+      // 注意：必应中国街道瓦片按 GCJ-02 加偏绘制，与其他 WGS84 图层叠加有数百米偏差
+      source = new XYZ({
+        crossOrigin: 'anonymous',
+        maxZoom: 21, // 必应 comp/ch 服务 z22 起返回 400
+        tileUrlFunction: (tileCoord) => {
+          if (!tileCoord) return undefined
           const [z, x, y] = tileCoord
           if (z == null || x == null || y == null) return undefined
           const quadKey = tileXYToQuadKey(x, y, z)
           let finalUrl = url.replace(/\{q\}/g, quadKey)
-          // 子域名轮换：{0-3} / {0-7} 等，按 (x+y+z) hash 分担请求
           finalUrl = finalUrl.replace(/\{(\d+)-(\d+)\}/g, (m, min, max) => {
             const lo = Number(min), hi = Number(max)
             return String(lo + ((x + y + z) % (hi - lo + 1)))
           })
           return finalUrl
         }
+      })
+    } else if (serviceType === 'xyz') {
+      source = new XYZ({
+        opaque: true,
+        url,
+        crossOrigin: 'anonymous'
       })
     } else if (serviceType === 'maps-for-free-terrain') {
       source = new OSM({

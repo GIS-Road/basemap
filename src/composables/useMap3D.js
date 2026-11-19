@@ -11,6 +11,8 @@ import {
 } from 'cesium'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
 import CONFIG from '@/config/config.js'
+import { tileXYToQuadKey } from '@/utils/quadkey.js'
+import { createBaiduImageryProvider } from '@/utils/baiduCesiumProvider.js'
 
 /**
  * @description Cesium 三维地图封装
@@ -71,7 +73,7 @@ async function loadTerrain(viewer) {
 /**
  * 将 OL/XYZ 风格的瓦片 URL 模板转换为 Cesium UrlTemplateImageryProvider 支持的格式
  * 1) {0-7} / {0-3} 子域写法  → {s} + subdomains 数组
- * 2) {q}（Bing quadkey）     → 不支持，返回 null
+ * 2) {q}（Bing quadkey）     → 不在此处理（createImageryProvider 已走 customTags 分支），返回 null
  * 3) WMTS REST 占位符        → {TileMatrix}→{z}  {TileRow}→{reverseY}  {TileCol}→{x}
  * 4) TMS 反 Y 占位符         → {_y} / {-y} → {reverseY}
  * @param {string} url
@@ -217,6 +219,12 @@ async function createImageryProvider(layerConfig) {
   const { id, url, serviceType } = layerConfig
   if (!url) return null
   try {
+    // 百度瓦片：BD09MC 自定义网格（瓦片数非 2 的幂、投影非线性），
+    // 标准 Web Mercator tilingScheme 请求到的索引必然错位，需走自定义 TilingScheme
+    if (serviceType === 'baidu') {
+      return createBaiduImageryProvider(url)
+    }
+
     // WMTS：优先 Capabilities 解析，其次 REST 模板
     if (serviceType === 'wmts') {
       if (/WMTSCapabilities|capabilities/i.test(url)) {
@@ -228,6 +236,30 @@ async function createImageryProvider(layerConfig) {
       }
       console.warn(`[3D] WMTS 图层 ${id} 既非 Capabilities 地址也无模板占位符，跳过`)
       return null
+    }
+
+    // Bing 系 quadkey 瓦片（{q}）：UrlTemplateImageryProvider 无内建 {q} 占位符，
+    // 通过 customTags 补齐；子域 {0-3} 先转成 {s} + subdomains
+    // 注意：必应中国街道瓦片按 GCJ-02 加偏绘制，与其他 WGS84 图层叠加有数百米偏差
+    if (url.includes('{q}')) {
+      let subdomains
+      let tpl = url
+      const subMatch = tpl.match(/\{(\d+)-(\d+)\}/)
+      if (subMatch) {
+        const lo = Number(subMatch[1])
+        const hi = Number(subMatch[2])
+        subdomains = Array.from({ length: hi - lo + 1 }, (_, i) => String(lo + i))
+        tpl = tpl.replace(/\{\d+-\d+\}/, '{s}')
+      }
+      return new UrlTemplateImageryProvider({
+        url: tpl,
+        subdomains,
+        customTags: {
+          // 回调签名固定：(imageryProvider, x, y, level)，y 从最北开始，与 quadkey 方向一致
+          q: (imageryProvider, x, y, level) => tileXYToQuadKey(x, y, level)
+        },
+        maximumLevel: 21 // 必应 comp/ch 服务 z22 起返回 400
+      })
     }
 
     // XYZ 及其他模板瓦片
