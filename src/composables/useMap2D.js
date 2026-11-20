@@ -8,7 +8,6 @@ import WMTS, { optionsFromCapabilities } from 'ol/source/WMTS'
 import WMTSCapabilities from 'ol/format/WMTSCapabilities'
 import Projection from 'ol/proj/Projection'
 import { addProjection, addCoordinateTransforms, getTransform, fromLonLat, toLonLat } from 'ol/proj'
-import Zoom from 'ol/control/Zoom'
 import Attribution from 'ol/control/Attribution'
 
 import CONFIG from "@/config/config.js"
@@ -136,7 +135,7 @@ export function useMap2D() {
         multiWorld: false
       }),
       controls: [
-        new Zoom(),
+        // 缩放控件由 ZoomControl.vue 组件承担（左上角按钮组，含放大/复位/缩小/指北）
         new Attribution()
       ]
     })

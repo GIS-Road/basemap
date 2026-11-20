@@ -701,9 +701,9 @@ const layers = [
         "zoom": ""
       },
       {
-        "id": "road_World_maps-for-free",
+        "id": "road_world_maps-for-free",
         "label": "路网_maps-for-free",
-        "name": "Road_World_maps-for-free",
+        "name": "road_world_maps-for-free",
         "url": `/maps-for-free/layer/streets/z{z}/row{y}/{z}_{x}-{y}.gif`,
         "group": "road_net",
         "type": "road",

@@ -95,6 +95,12 @@
           @mode-change="handleModeChange"
         />
 
+        <!-- 左上角缩放按钮组（2D，替代 OL 默认缩放控件） -->
+        <ZoomControl
+          v-if="mapStore.mapMode === '2d' && map2d"
+          :map="map2d"
+        />
+
         <!-- 底图选择器（可折叠面板，默认收起） -->
         <div class="base-map-selector" v-if="mapStore.mapMode === '5d'">
           <button
@@ -155,6 +161,7 @@ import { useMap2D } from './composables/useMap2D'
 import { useMap3D } from './composables/useMap3D'
 import LayerTree from './components/LayerTree.vue'
 import MapToggle from './components/MapToggle.vue'
+import ZoomControl from './components/ZoomControl.vue'
 import DrawingToolbar from './components/DrawingToolbar.vue'
 import DrawingToolbar3D from './components/DrawingToolbar3D.vue'
 import TempLayerDialog from './components/TempLayerDialog.vue'
