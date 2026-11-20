@@ -851,6 +851,11 @@ const tools = [
     icon: '<svg viewBox="0 0 20 20" width="20" height="20"><path d="M4 3l5 12 2-5 5-2z" fill="currentColor" opacity="0.3"/><path d="M4 3l5 12 2-5 5-2z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>'
   },
   {
+    type: 'Text',
+    label: '标注',
+    icon: '<svg viewBox="0 0 20 20" width="20" height="20"><path d="M4 4h12M10 4v11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M7.5 17.5h5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
+  },
+  {
     type: 'Point',
     label: '点',
     icon: '<svg viewBox="0 0 20 20" width="20" height="20"><circle cx="10" cy="10" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/></svg>'
@@ -871,6 +876,11 @@ const tools = [
     icon: '<svg viewBox="0 0 20 20" width="20" height="20"><rect x="4" y="5" width="12" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="4" y="5" width="12" height="10" rx="1" fill="currentColor" opacity="0.15"/></svg>'
   },
   {
+    type: 'CircleOutline',
+    label: '画圆',
+    icon: '<svg viewBox="0 0 20 20" width="20" height="20"><circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>'
+  },
+  {
     type: 'Ellipse',
     label: '椭圆',
     icon: '<svg viewBox="0 0 20 20" width="20" height="20"><ellipse cx="10" cy="10" rx="7" ry="5" fill="none" stroke="currentColor" stroke-width="1.3"/><ellipse cx="10" cy="10" rx="7" ry="5" fill="currentColor" opacity="0.15"/></svg>'
@@ -889,16 +899,6 @@ const tools = [
     type: 'BattleArrow',
     label: '军标',
     icon: '<svg viewBox="0 0 20 20" width="20" height="20"><path d="M10 1.5 L18 9 L13 9 L13 18.5 L7 18.5 L7 9 L2 9 Z" fill="currentColor"/></svg>'
-  },
-  {
-    type: 'CircleOutline',
-    label: '画圆',
-    icon: '<svg viewBox="0 0 20 20" width="20" height="20"><circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>'
-  },
-  {
-    type: 'Text',
-    label: '标注',
-    icon: '<svg viewBox="0 0 20 20" width="20" height="20"><path d="M4 4h12M10 4v11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M7.5 17.5h5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
   }
 ]
 
@@ -929,6 +929,152 @@ const outlineOpacity = ref(1)
 const pointAnimated = ref(false)
 const pointAnimType = ref('pulse')   // pulse 脉冲 | breathe 呼吸 | blink 闪烁
 const pointAnimSpeed = ref(1)
+
+// 样式默认值：通用、点专属、线/面专属、文字专属（激活对应工具时应用，切回其他工具恢复）
+const TEXT_STYLE_BASE = {  // 文字通用基础值（各工具默认值都包含，保证切工具时字段完整）
+  textContent: '标注文字',
+  textFontSize: 40,
+  textBold: false,
+  textColor: '#FFFFFF',
+  textRotation: 0,
+  textOffsetX: 0,
+  textOffsetY: 0,
+  textOutlineEnabled: false,
+  textOutlineColor: '#000000',
+  textOutlineWidth: 3,
+  textBgEnabled: false,
+  textBgColor: '#000000',
+  textBgOpacity: 0.45,
+  textBorderEnabled: false,
+  textBorderColor: '#4096FF',
+  textBorderOpacity: 1,
+  textBorderWidth: 1.5,
+  textBorderRadius: 4,
+  textPadding: 4
+}
+const COMMON_STYLE_DEFAULTS = {
+  ...TEXT_STYLE_BASE,
+  strokeColor: '#4096FF',
+  strokeWidth: 2,
+  strokeOpacity: 1,
+  strokeDashType: 'solid',
+  dashLength: 8,
+  dashGap: 4,
+  fillColor: '#4096FF',
+  fillOpacity: 0.15,
+  featureRadius: 6,
+  outlineEnabled: false,
+  outlineColor: '#FFFFFF',
+  outlineWidth: 2,
+  outlineOpacity: 1,
+  pointAnimated: false,
+  pointAnimType: 'pulse',
+  pointAnimSpeed: 1
+}
+const POINT_STYLE_DEFAULTS = {
+  ...TEXT_STYLE_BASE,
+  strokeColor: '#FF0000',   // 边线颜色：红色
+  strokeWidth: 5,           // 边线宽度：5px
+  strokeOpacity: 1,         // 边线透明度：100%
+  strokeDashType: 'solid',
+  dashLength: 8,
+  dashGap: 4,
+  featureRadius: 10,        // 点大小：10px
+  outlineEnabled: true,     // 启用描边：开启
+  outlineColor: '#FFFFFF',  // 描边颜色：白色
+  outlineWidth: 0.5,        // 描边宽度：0.5px
+  outlineOpacity: 1,        // 描边透明度：100%
+  pointAnimated: true,      // 动态样式：开启
+  pointAnimType: 'pulse',   // 动画类型：脉冲
+  pointAnimSpeed: 1         // 动画速度：1x
+}
+const LINE_STYLE_DEFAULTS = {
+  ...TEXT_STYLE_BASE,
+  strokeColor: '#FF0000',   // 边线颜色：红色
+  strokeWidth: 10,          // 边线宽度：10px
+  strokeOpacity: 1,         // 边线透明度：100%
+  strokeDashType: 'dashed', // 边线类型：虚线（虚线长度/间隔需虚线才生效）
+  dashLength: 14,           // 虚线长度：14px
+  dashGap: 20,              // 虚线间隔：20px
+  outlineEnabled: true,     // 启用描边：开启
+  outlineColor: '#FFFFFF',  // 描边颜色：白色
+  outlineWidth: 3,          // 描边宽度：3px
+  outlineOpacity: 1,        // 描边透明度：100%
+  pointAnimated: false,
+  pointAnimType: 'pulse',
+  pointAnimSpeed: 1
+}
+const POLYGON_STYLE_DEFAULTS = {
+  ...LINE_STYLE_DEFAULTS,
+  fillColor: '#4096FF',     // 填充颜色：默认蓝色
+  fillOpacity: 0.15         // 填充透明度：15%
+}
+const TEXT_STYLE_DEFAULTS = {
+  ...TEXT_STYLE_BASE,
+  textFontSize: 50,            // 文字大小：50px
+  textBold: true,              // 加粗：开启
+  textRotation: 337,           // 旋转角度：337°
+  textBgEnabled: true,         // 文字背景：开启
+  textBgColor: '#FF7A69',      // 背景颜色
+  textBgOpacity: 0.45,         // 背景透明度：45%
+  textBorderEnabled: true,     // 启用边框：开启
+  textBorderColor: '#FF7A69',  // 边框颜色
+  textBorderOpacity: 0.5,      // 边框透明度：50%
+  textBorderWidth: 5,          // 边框宽度：5px
+  textBorderRadius: 10,        // 边框圆角：10px
+  textPadding: 15,             // 内边距：15px
+  textOutlineEnabled: true,    // 文字描边：启用
+  textOutlineColor: '#FAAD14', // 描边颜色
+  textOutlineWidth: 6          // 描边宽度：6px
+}
+// 各工具的专属默认值（Rectangle/Ellipse 同为面要素，沿用面默认值）
+const TOOL_STYLE_DEFAULTS = {
+  Point: POINT_STYLE_DEFAULTS,
+  LineString: LINE_STYLE_DEFAULTS,
+  Polygon: POLYGON_STYLE_DEFAULTS,
+  Rectangle: POLYGON_STYLE_DEFAULTS,
+  Ellipse: POLYGON_STYLE_DEFAULTS,
+  Text: TEXT_STYLE_DEFAULTS
+}
+
+function applyStyleDefaults(defs) {
+  strokeColor.value = defs.strokeColor
+  strokeWidth.value = defs.strokeWidth
+  strokeOpacity.value = defs.strokeOpacity
+  strokeDashType.value = defs.strokeDashType
+  dashLength.value = defs.dashLength
+  dashGap.value = defs.dashGap
+  fillColor.value = defs.fillColor
+  fillOpacity.value = defs.fillOpacity
+  featureRadius.value = defs.featureRadius
+  outlineEnabled.value = defs.outlineEnabled
+  outlineColor.value = defs.outlineColor
+  outlineWidth.value = defs.outlineWidth
+  outlineOpacity.value = defs.outlineOpacity
+  pointAnimated.value = defs.pointAnimated
+  pointAnimType.value = defs.pointAnimType
+  pointAnimSpeed.value = defs.pointAnimSpeed
+  // 文字标注
+  textContent.value = defs.textContent
+  textFontSize.value = defs.textFontSize
+  textBold.value = defs.textBold
+  textColor.value = defs.textColor
+  textRotation.value = defs.textRotation
+  textOffsetX.value = defs.textOffsetX
+  textOffsetY.value = defs.textOffsetY
+  textOutlineEnabled.value = defs.textOutlineEnabled
+  textOutlineColor.value = defs.textOutlineColor
+  textOutlineWidth.value = defs.textOutlineWidth
+  textBgEnabled.value = defs.textBgEnabled
+  textBgColor.value = defs.textBgColor
+  textBgOpacity.value = defs.textBgOpacity
+  textBorderEnabled.value = defs.textBorderEnabled
+  textBorderColor.value = defs.textBorderColor
+  textBorderOpacity.value = defs.textBorderOpacity
+  textBorderWidth.value = defs.textBorderWidth
+  textBorderRadius.value = defs.textBorderRadius
+  textPadding.value = defs.textPadding
+}
 // 文字标注参数
 const textContent = ref('标注文字')
 const textFontSize = ref(40)
@@ -2165,6 +2311,7 @@ function activateTool(type) {
   }
 
   deactivateTool()
+  const prevType = activeTool.value
 
   if (!props.map) return
 
@@ -2175,6 +2322,13 @@ function activateTool(type) {
 
   // 箭头大小按类型给默认值（军标箭头默认 5x，其余箭头 1x）
   if (ARROW_TYPES.includes(type)) arrowScale.value = type === 'BattleArrow' ? 5 : 1
+
+  // 按工具应用专属默认样式；从专属工具切回其他工具时恢复通用默认
+  if (TOOL_STYLE_DEFAULTS[type]) {
+    applyStyleDefaults(TOOL_STYLE_DEFAULTS[type])
+  } else if (TOOL_STYLE_DEFAULTS[prevType]) {
+    applyStyleDefaults(COMMON_STYLE_DEFAULTS)
+  }
 
   if (type === 'Select') {
     activateSelectMode()
