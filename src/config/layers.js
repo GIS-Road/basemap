@@ -456,6 +456,39 @@ const layers = [
         "zoom": ""
       },
       {
+        "id": "jn_image_china_2025",
+        "label": "吉林一号2025年全国一张图卫星图",
+        "name": "吉林一号2025年全国一张图卫星图",
+        "url": `https://api.jl1mall.com/getTile/{z}/{x}/{-y}?mk=87ef1846fbacfb91a8f45eff68115cd7&tk=${CONFIG.VITE_APP_JL_TOKEN}&vf=0`,
+        "group": "image",
+        "type": "image",
+        "serviceType": "jl1",
+        "visible": false,
+        "zoom": ""
+      },
+      {
+        "id": "jn_image_china_2022",
+        "label": "吉林一号2022年全国一张图卫星图",
+        "name": "吉林一号2022年全国一张图卫星图",
+        "url": `https://api.jl1mall.com/getTile/{z}/{x}/{-y}?mk=9a4ea39e1388ae1b3733faa8557b5f42&tk=${CONFIG.VITE_APP_JL_TOKEN}&vf=0`,
+        "group": "image",
+        "type": "image",
+        "serviceType": "jl1",
+        "visible": false,
+        "zoom": ""
+      },
+      {
+        "id": "jn_image_world_2022",
+        "label": "吉林一号2022年全球一张图卫星图",
+        "name": "吉林一号2022年全球一张图卫星图",
+        "url": `https://api.jl1mall.com/getTile/{z}/{x}/{-y}?mk=9a4ea39e1388ae1b3733faa8557b5f42&tk=${CONFIG.VITE_APP_JL_TOKEN}&vf=0`,
+        "group": "image",
+        "type": "image",
+        "serviceType": "jl1",
+        "visible": false,
+        "zoom": ""
+      },
+      {
         "id": "gaode_image",
         "label": "高德卫星图(GJC02)（有偏移）",
         "name": "高德卫星图(GJC02)（有偏移）",
