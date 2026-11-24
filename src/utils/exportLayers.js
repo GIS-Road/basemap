@@ -12,6 +12,7 @@ import layersConfig from '../config/layers.js'
  */
 const SERVICE_TYPE_MAP = {
   'xyz': 'XYZ 瓦片',
+  'jl1': '吉林一号（动态签名）',
   'wmts': 'WMTS 服务',
   'maps-for-free-terrain': 'maps-for-free 地形',
   'maps-for-free-landuse': 'maps-for-free 土地利用',

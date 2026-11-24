@@ -18,6 +18,7 @@ import {
   BAIDU_EXTENT
 } from '@/utils/baiduTile.js'
 import { tileXYToQuadKey } from '@/utils/quadkey.js'
+import { buildJl1TileUrl } from '@/utils/jl1Tile.js'
 
 // ====================== 百度 BD09MC（百度墨卡托）投影注册 ======================
 // 百度瓦片不使用 Web Mercator：其墨卡托建立在 BD-09 经纬度之上且为自定义分段多项式投影，
@@ -311,6 +312,18 @@ export function useMap2D() {
             return String(lo + ((x + y + z) % (hi - lo + 1)))
           })
           return finalUrl
+        }
+      })
+    } else if (serviceType === 'jl1') {
+      // 吉林一号：sign 与瓦片坐标绑定，需逐瓦片按 md5(从 /getTile 起的路径 + sk) 计算
+      source = new XYZ({
+        crossOrigin: 'anonymous',
+        maxZoom: 18,
+        tileUrlFunction: (tileCoord) => {
+          if (!tileCoord) return undefined
+          const [z, x, y] = tileCoord
+          if (z == null || x == null || y == null) return undefined
+          return buildJl1TileUrl(url, z, x, y)
         }
       })
     } else if (serviceType === 'xyz') {

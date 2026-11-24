@@ -12,6 +12,7 @@ import {
 import 'cesium/Build/Cesium/Widgets/widgets.css'
 import CONFIG from '@/config/config.js'
 import { tileXYToQuadKey } from '@/utils/quadkey.js'
+import { getJl1Sign } from '@/utils/jl1Tile.js'
 import { createBaiduImageryProvider } from '@/utils/baiduCesiumProvider.js'
 
 /**
@@ -223,6 +224,19 @@ async function createImageryProvider(layerConfig) {
     // 标准 Web Mercator tilingScheme 请求到的索引必然错位，需走自定义 TilingScheme
     if (serviceType === 'baidu') {
       return createBaiduImageryProvider(url)
+    }
+
+    // 吉林一号：sign 与瓦片坐标绑定，用 customTags 逐瓦片计算
+    if (serviceType === 'jl1') {
+      const tpl = url.replace(/&sign=[^&]*/g, '').replace(/\{-y\}/g, '{reverseY}') + '&sign={sign}'
+      return new UrlTemplateImageryProvider({
+        url: tpl,
+        maximumLevel: 18,
+        customTags: {
+          // 回调签名固定：(imageryProvider, x, y, level)，y 从最北开始
+          sign: (imageryProvider, x, y, level) => getJl1Sign(url, level, x, y)
+        }
+      })
     }
 
     // WMTS：优先 Capabilities 解析，其次 REST 模板
