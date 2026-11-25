@@ -1,0 +1,317 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - img "logo" [ref=e7]
+      - heading "在线底图服务系统" [level=1] [ref=e8]
+    - generic [ref=e11]:
+      - textbox "搜索地名、地址、POI…" [ref=e15]
+      - button "搜索" [ref=e16] [cursor=pointer]
+    - generic [ref=e17]:
+      - generic "定位到当前位置" [ref=e18] [cursor=pointer]
+      - generic [ref=e22]: 二维模式
+      - generic [ref=e23]: 移动鼠标查看坐标
+  - generic [ref=e28]:
+    - complementary [ref=e29]:
+      - generic [ref=e30]:
+        - generic [ref=e31]: 图层面板
+        - generic [ref=e39] [cursor=pointer]
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - generic [ref=e45] [cursor=pointer]:
+            - generic:
+              - combobox [ref=e47]
+              - generic [ref=e48]: 全部
+          - button "导出" [ref=e53] [cursor=pointer]
+        - textbox "搜索图层..." [ref=e62]
+        - tree [ref=e63]:
+          - treeitem "图标 地形图层（11） 地形图层" [expanded] [ref=e64]:
+            - generic [ref=e70] [cursor=pointer]:
+              - img "图标" [ref=e72]
+              - generic [ref=e73]:
+                - generic [ref=e74]: 地形图层（11）
+                - generic: 地形图层
+              - generic "拖动调整顺序" [ref=e75]
+            - group [ref=e83]:
+              - treeitem "山体阴影_白色_esri 山体阴影_白色_esri" [ref=e84]:
+                - generic [ref=e87] [cursor=pointer]:
+                  - generic [ref=e88]:
+                    - generic [ref=e89]: 山体阴影_白色_esri
+                    - generic: 山体阴影_白色_esri
+                  - generic "透明度设置" [ref=e90]
+                  - generic "显示图层" [ref=e94]
+                  - generic "拖动调整顺序" [ref=e98]
+              - treeitem "山体阴影_黑色_esri 山体阴影_黑色_esri" [ref=e106]:
+                - generic [ref=e109] [cursor=pointer]:
+                  - generic [ref=e110]:
+                    - generic [ref=e111]: 山体阴影_黑色_esri
+                    - generic: 山体阴影_黑色_esri
+                  - generic "透明度设置" [ref=e112]
+                  - generic "显示图层" [ref=e116]
+                  - generic "拖动调整顺序" [ref=e120]
+              - treeitem "山体阴影_天地图 山体阴影_天地图" [ref=e128]:
+                - generic [ref=e131] [cursor=pointer]:
+                  - generic [ref=e132]:
+                    - generic [ref=e133]: 山体阴影_天地图
+                    - generic: 山体阴影_天地图
+                  - generic "透明度设置" [ref=e134]
+                  - generic "显示图层" [ref=e138]
+                  - generic "拖动调整顺序" [ref=e142]
+              - treeitem "地形_maps-for-free 地形_maps-for-free" [ref=e150]:
+                - generic [ref=e153] [cursor=pointer]:
+                  - generic [ref=e154]:
+                    - generic [ref=e155]: 地形_maps-for-free
+                    - generic: 地形_maps-for-free
+                  - generic "透明度设置" [ref=e156]
+                  - generic "显示图层" [ref=e160]
+                  - generic "拖动调整顺序" [ref=e164]
+              - treeitem "Esri_Shaded_Relief Esri_Shaded_Relief" [ref=e172]:
+                - generic [ref=e175] [cursor=pointer]:
+                  - generic [ref=e176]:
+                    - generic [ref=e177]: Esri_Shaded_Relief
+                    - generic: Esri_Shaded_Relief
+                  - generic "透明度设置" [ref=e178]
+                  - generic "显示图层" [ref=e182]
+                  - generic "拖动调整顺序" [ref=e186]
+              - treeitem "Esri_World_Physical_Map Esri_World_Physical_Map" [ref=e194]:
+                - generic [ref=e197] [cursor=pointer]:
+                  - generic [ref=e198]:
+                    - generic [ref=e199]: Esri_World_Physical_Map
+                    - generic: Esri_World_Physical_Map
+                  - generic "透明度设置" [ref=e200]
+                  - generic "显示图层" [ref=e204]
+                  - generic "拖动调整顺序" [ref=e208]
+              - treeitem "Esri_World_Terrain_Base Esri_World_Terrain_Base" [ref=e216]:
+                - generic [ref=e219] [cursor=pointer]:
+                  - generic [ref=e220]:
+                    - generic [ref=e221]: Esri_World_Terrain_Base
+                    - generic: Esri_World_Terrain_Base
+                  - generic "透明度设置" [ref=e222]
+                  - generic "显示图层" [ref=e226]
+                  - generic "拖动调整顺序" [ref=e230]
+              - treeitem "欧洲海洋观测EMODnet 欧洲海洋观测EMODnet" [ref=e238]:
+                - generic [ref=e241] [cursor=pointer]:
+                  - generic [ref=e242]:
+                    - generic [ref=e243]: 欧洲海洋观测EMODnet
+                    - generic: 欧洲海洋观测EMODnet
+                  - generic "透明度设置" [ref=e244]
+                  - generic "显示图层" [ref=e248]
+                  - generic "拖动调整顺序" [ref=e252]
+              - treeitem "Esri_World_Ocean_Base Esri_World_Ocean_Base" [ref=e260]:
+                - generic [ref=e263] [cursor=pointer]:
+                  - generic [ref=e264]:
+                    - generic [ref=e265]: Esri_World_Ocean_Base
+                    - generic: Esri_World_Ocean_Base
+                  - generic "透明度设置" [ref=e266]
+                  - generic "显示图层" [ref=e270]
+                  - generic "拖动调整顺序" [ref=e274]
+              - treeitem "谷歌地形图_纯图_土地利用 谷歌地形图_纯图_土地利用" [ref=e282]:
+                - generic [ref=e285] [cursor=pointer]:
+                  - generic [ref=e286]:
+                    - generic [ref=e287]: 谷歌地形图_纯图_土地利用
+                    - generic: 谷歌地形图_纯图_土地利用
+                  - generic "透明度设置" [ref=e288]
+                  - generic "显示图层" [ref=e292]
+                  - generic "拖动调整顺序" [ref=e296]
+              - treeitem "谷歌地形图_纯图_灰色 谷歌地形图_纯图_灰色" [ref=e304]:
+                - generic [ref=e307] [cursor=pointer]:
+                  - generic [ref=e308]:
+                    - generic [ref=e309]: 谷歌地形图_纯图_灰色
+                    - generic: 谷歌地形图_纯图_灰色
+                  - generic "透明度设置" [ref=e310]
+                  - generic "显示图层" [ref=e314]
+                  - generic "拖动调整顺序" [ref=e318]
+          - treeitem "图标 影像图层（10） 影像图层" [expanded] [ref=e326]:
+            - generic [ref=e332] [cursor=pointer]:
+              - img "图标" [ref=e334]
+              - generic [ref=e335]:
+                - generic [ref=e336]: 影像图层（10）
+                - generic: 影像图层
+              - generic "拖动调整顺序" [ref=e337]
+            - group [ref=e345]:
+              - treeitem "天地图影像 天地图影像" [ref=e346]:
+                - generic [ref=e349] [cursor=pointer]:
+                  - generic [ref=e350]:
+                    - generic [ref=e351]: 天地图影像
+                    - generic: 天地图影像
+                  - generic "透明度设置" [ref=e352]
+                  - generic "隐藏图层" [ref=e356]
+                  - generic "拖动调整顺序" [ref=e361]
+              - treeitem "星图地球_影像 星图地球_影像" [ref=e369]:
+                - generic [ref=e372] [cursor=pointer]:
+                  - generic [ref=e373]:
+                    - generic [ref=e374]: 星图地球_影像
+                    - generic: 星图地球_影像
+                  - generic "透明度设置" [ref=e375]
+                  - generic "显示图层" [ref=e379]
+                  - generic "拖动调整顺序" [ref=e383]
+              - treeitem "Esri_World_Imagery_卫星图 Esri_World_Imagery_卫星图" [ref=e391]:
+                - generic [ref=e394] [cursor=pointer]:
+                  - generic [ref=e395]:
+                    - generic [ref=e396]: Esri_World_Imagery_卫星图
+                    - generic: Esri_World_Imagery_卫星图
+                  - generic "透明度设置" [ref=e397]
+                  - generic "显示图层" [ref=e401]
+                  - generic "拖动调整顺序" [ref=e405]
+              - treeitem "吉林一号2025年全国一张图卫星图 吉林一号2025年全国一张图卫星图" [ref=e413]:
+                - generic [ref=e416] [cursor=pointer]:
+                  - generic [ref=e417]:
+                    - generic [ref=e418]: 吉林一号2025年全国一张图卫星图
+                    - generic: 吉林一号2025年全国一张图卫星图
+                  - generic "透明度设置" [ref=e419]
+                  - generic "显示图层" [ref=e423]
+                  - generic "拖动调整顺序" [ref=e427]
+              - treeitem "吉林一号2022年全国一张图卫星图 吉林一号2022年全国一张图卫星图" [ref=e435]:
+                - generic [ref=e438] [cursor=pointer]:
+                  - generic [ref=e439]:
+                    - generic [ref=e440]: 吉林一号2022年全国一张图卫星图
+                    - generic: 吉林一号2022年全国一张图卫星图
+                  - generic "透明度设置" [ref=e441]
+                  - generic "显示图层" [ref=e445]
+                  - generic "拖动调整顺序" [ref=e449]
+              - treeitem "吉林一号2022年全球一张图卫星图 吉林一号2022年全球一张图卫星图" [ref=e457]:
+                - generic [ref=e460] [cursor=pointer]:
+                  - generic [ref=e461]:
+                    - generic [ref=e462]: 吉林一号2022年全球一张图卫星图
+                    - generic: 吉林一号2022年全球一张图卫星图
+                  - generic "透明度设置" [ref=e463]
+                  - generic "显示图层" [ref=e467]
+                  - generic "拖动调整顺序" [ref=e471]
+              - treeitem "高德卫星图(GJC02)（有偏移） 高德卫星图(GJC02)（有偏移）" [ref=e479]:
+                - generic [ref=e482] [cursor=pointer]:
+                  - generic [ref=e483]:
+                    - generic [ref=e484]: 高德卫星图(GJC02)（有偏移）
+                    - generic: 高德卫星图(GJC02)（有偏移）
+                  - generic "透明度设置" [ref=e485]
+                  - generic "显示图层" [ref=e489]
+                  - generic "拖动调整顺序" [ref=e493]
+              - treeitem "百度卫星影像 百度卫星影像" [ref=e501]:
+                - generic [ref=e504] [cursor=pointer]:
+                  - generic [ref=e505]:
+                    - generic [ref=e506]: 百度卫星影像
+                    - generic: 百度卫星影像
+                  - generic "透明度设置" [ref=e507]
+                  - generic "显示图层" [ref=e511]
+                  - generic "拖动调整顺序" [ref=e515]
+              - treeitem "影像_谷歌原版影像 影像_谷歌原版影像" [ref=e523]:
+                - generic [ref=e526] [cursor=pointer]:
+                  - generic [ref=e527]:
+                    - generic [ref=e528]: 影像_谷歌原版影像
+                    - generic: 影像_谷歌原版影像
+                  - generic "透明度设置" [ref=e529]
+                  - generic "显示图层" [ref=e533]
+                  - generic "拖动调整顺序" [ref=e537]
+              - treeitem "谷歌卫星混合图层(GCJ02)（有偏移） 谷歌卫星混合图层(GCJ02)（有偏移）" [ref=e545]:
+                - generic [ref=e548] [cursor=pointer]:
+                  - generic [ref=e549]:
+                    - generic [ref=e550]: 谷歌卫星混合图层(GCJ02)（有偏移）
+                    - generic: 谷歌卫星混合图层(GCJ02)（有偏移）
+                  - generic "透明度设置" [ref=e551]
+                  - generic "显示图层" [ref=e555]
+                  - generic "拖动调整顺序" [ref=e559]
+          - treeitem "图标 矢量图层（6） 矢量图层" [ref=e567]:
+            - generic [ref=e573] [cursor=pointer]:
+              - img "图标" [ref=e575]
+              - generic [ref=e576]:
+                - generic [ref=e577]: 矢量图层（6）
+                - generic: 矢量图层
+              - generic "拖动调整顺序" [ref=e578]
+          - treeitem "图标 水系图层（2） 水系图层" [ref=e586]:
+            - generic [ref=e592] [cursor=pointer]:
+              - img "图标" [ref=e594]
+              - generic [ref=e595]:
+                - generic [ref=e596]: 水系图层（2）
+                - generic: 水系图层
+              - generic "拖动调整顺序" [ref=e597]
+          - treeitem "图标 灯光图层（1） 灯光图层" [ref=e605]:
+            - generic [ref=e611] [cursor=pointer]:
+              - img "图标" [ref=e613]
+              - generic [ref=e614]:
+                - generic [ref=e615]: 灯光图层（1）
+                - generic: 灯光图层
+              - generic "拖动调整顺序" [ref=e616]
+          - treeitem "图标 路网图层（10） 路网图层" [ref=e624]:
+            - generic [ref=e630] [cursor=pointer]:
+              - img "图标" [ref=e632]
+              - generic [ref=e633]:
+                - generic [ref=e634]: 路网图层（10）
+                - generic: 路网图层
+              - generic "拖动调整顺序" [ref=e635]
+          - treeitem "图标 行政区图层（4） 行政区图层" [ref=e643]:
+            - generic [ref=e649] [cursor=pointer]:
+              - img "图标" [ref=e651]
+              - generic [ref=e652]:
+                - generic [ref=e653]: 行政区图层（4）
+                - generic: 行政区图层
+              - generic "拖动调整顺序" [ref=e654]
+          - treeitem "图标 注记图层（3） 注记图层" [expanded] [ref=e662]:
+            - generic [ref=e668] [cursor=pointer]:
+              - img "图标" [ref=e670]
+              - generic [ref=e671]:
+                - generic [ref=e672]: 注记图层（3）
+                - generic: 注记图层
+              - generic "拖动调整顺序" [ref=e673]
+            - group [ref=e681]:
+              - treeitem "天地图矢量注记 天地图矢量注记" [ref=e682]:
+                - generic [ref=e685] [cursor=pointer]:
+                  - generic [ref=e686]:
+                    - generic [ref=e687]: 天地图矢量注记
+                    - generic: 天地图矢量注记
+                  - generic "透明度设置" [ref=e688]
+                  - generic "显示图层" [ref=e692]
+                  - generic "拖动调整顺序" [ref=e696]
+              - treeitem "天地图影像注记 天地图影像注记" [ref=e704]:
+                - generic [ref=e707] [cursor=pointer]:
+                  - generic [ref=e708]:
+                    - generic [ref=e709]: 天地图影像注记
+                    - generic: 天地图影像注记
+                  - generic "透明度设置" [ref=e710]
+                  - generic "显示图层" [ref=e714]
+                  - generic "拖动调整顺序" [ref=e718]
+              - treeitem "Esri_World_Boundaries_and_Places Esri_World_Boundaries_and_Places" [ref=e726]:
+                - generic [ref=e729] [cursor=pointer]:
+                  - generic [ref=e730]:
+                    - generic [ref=e731]: Esri_World_Boundaries_and_Places
+                    - generic: Esri_World_Boundaries_and_Places
+                  - generic "透明度设置" [ref=e732]
+                  - generic "显示图层" [ref=e736]
+                  - generic "拖动调整顺序" [ref=e740]
+          - treeitem "图标 土地利用图层（8） 土地利用图层" [ref=e748]:
+            - generic [ref=e754] [cursor=pointer]:
+              - img "图标" [ref=e756]
+              - generic [ref=e757]:
+                - generic [ref=e758]: 土地利用图层（8）
+                - generic: 土地利用图层
+              - generic "拖动调整顺序" [ref=e759]
+          - treeitem "图标 Wayback 历史影像图层（195） Wayback 历史影像图层" [ref=e767]:
+            - generic [ref=e773] [cursor=pointer]:
+              - img "图标" [ref=e775]
+              - generic [ref=e776]:
+                - generic [ref=e777]: Wayback 历史影像图层（195）
+                - generic: Wayback 历史影像图层
+              - generic "拖动调整顺序" [ref=e778]
+    - main [ref=e786]:
+      - generic [ref=e787]: 正在获取位置...
+      - generic [ref=e793]:
+        - button "2D" [ref=e796] [cursor=pointer]
+        - button "3D" [ref=e801] [cursor=pointer]
+      - generic [ref=e807]:
+        - button "放大" [ref=e808] [cursor=pointer]
+        - button "复位" [ref=e812] [cursor=pointer]
+        - button "缩小" [ref=e816] [cursor=pointer]
+        - button "已朝北" [ref=e820] [cursor=pointer]
+      - generic [ref=e826]:
+        - generic [ref=e827]:
+          - button "选择" [ref=e828] [cursor=pointer]
+          - button "标注" [ref=e834] [cursor=pointer]
+          - button "点" [ref=e839] [cursor=pointer]
+          - button "线" [ref=e845] [cursor=pointer]
+          - button "面" [ref=e850] [cursor=pointer]
+          - button "矩形" [ref=e856] [cursor=pointer]
+          - button "画圆" [ref=e862] [cursor=pointer]
+          - button "椭圆" [ref=e867] [cursor=pointer]
+          - button "小箭头" [ref=e873] [cursor=pointer]
+          - button "风向" [ref=e879] [cursor=pointer]
+          - button "军标" [ref=e885] [cursor=pointer]
+        - generic [ref=e891]:
+          - button "清除" [ref=e892] [cursor=pointer]
+          - button "撤销" [ref=e896] [cursor=pointer]

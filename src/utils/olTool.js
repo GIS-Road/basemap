@@ -33,9 +33,14 @@ export function removeLayerByName(layerName,map = window._map){
  * @description：创建 OpenLayers 闪烁点
  * @param map {Map}：地图对象
  * @param coordinate {Coordinate [x,y]}：地图坐标点对象
+ * @param options {Object}：可选参数
+ *   - fit {boolean}：是否 fit 到闪烁点（默认 true，保持原行为）
+ *   - duration {number}：动画持续毫秒数，0 = 无限循环（默认 0）
+ * @returns {Function} 清除函数：停止动画并移除图层
  **/
-export function createPulseEffect(map, coordinate){
-    removeLayerByName('poiTempLayer')
+export function createPulseEffect(map, coordinate, options = {}){
+    const { fit = true, duration = 0 } = options
+    removeLayerByName('poiTempLayer', map)
     const pulseFeatures = [];
     const source = new VectorSource();
     const layer = new VectorLayer({ source });
@@ -49,10 +54,13 @@ export function createPulseEffect(map, coordinate){
         source.addFeature(feature);
     }
     // 定位到闪烁点
-    map.getView().fit(pulseFeatures[0].getGeometry())
+    if (fit) {
+        map.getView().fit(pulseFeatures[0].getGeometry())
+    }
 
     // 初始半径
     let radius = 5;
+    let rafId = 0;
     // 动画函数
     const animate = () => {
         radius = radius >= 20 ? 5 : radius + 0.1;
@@ -76,9 +84,20 @@ export function createPulseEffect(map, coordinate){
             }));
         });
 
-        requestAnimationFrame(animate);
+        rafId = requestAnimationFrame(animate);
     };
     animate();
-    // 返回清除函数
-    return () => map.removeLayer(layer);
+
+    // 清除函数：取消动画帧并移除图层
+    let timeoutId = 0
+    const cleanup = () => {
+        cancelAnimationFrame(rafId)
+        clearTimeout(timeoutId)
+        map.removeLayer(layer)
+    }
+    // 限时模式：duration > 0 时到期自动清除
+    if (duration > 0) {
+        timeoutId = setTimeout(cleanup, duration)
+    }
+    return cleanup
 }

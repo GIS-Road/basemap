@@ -836,6 +836,17 @@ const layers = [
         "zoom": ""
       },
       {
+        "id": "tdt_global_boundary",
+        "label": "天地图全球境界",
+        "name": "tdt_global_boundary",
+        "url": `https://t{0-7}.tianditu.gov.cn/DataServer?T=ibo_w&x={x}&y={y}&l={z}&tk=${CONFIG.VITE_APP_TDT_TOKEN}`,
+        "group": "boundary",
+        "type": "boundary",
+        "serviceType": "xyz",
+        "visible": false,
+        "zoom": ""
+      },
+      {
         "id": "Admin_World_maps-for-free",
         "label": "Admin_maps-for-free_world",
         "name": "Admin_World_maps-for-free",

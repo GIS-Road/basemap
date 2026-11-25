@@ -5,6 +5,8 @@
  * @date       2026-07-28
  */
 
+// 注意：以下token需要替换为你自己申请的key
+
 export default {
     // 天地图 token
     VITE_APP_TDT_TOKEN: "fa7ec9766b2c00747e3dd60ab3d05892",

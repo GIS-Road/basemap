@@ -8,6 +8,14 @@
         </div>
         <h1 class="header-title">在线底图服务系统</h1>
       </div>
+      <!-- 地名地址搜索（顶部标题栏中部偏左） -->
+      <div class="header-search">
+        <GeoSearch
+          :get-view-info="getSearchViewInfo"
+          @locate="handleSearchLocate"
+        />
+      </div>
+
       <div class="header-right">
         <!-- 定位按钮 -->
         <div
@@ -155,13 +163,14 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { toLonLat } from 'ol/proj'
+import { toLonLat, fromLonLat } from 'ol/proj'
 import { useMapStore } from './stores/mapStore'
 import { useMap2D } from './composables/useMap2D'
 import { useMap3D } from './composables/useMap3D'
 import LayerTree from './components/LayerTree.vue'
 import MapToggle from './components/MapToggle.vue'
 import ZoomControl from './components/ZoomControl.vue'
+import GeoSearch from './components/GeoSearch.vue'
 import DrawingToolbar from './components/DrawingToolbar.vue'
 import DrawingToolbar3D from './components/DrawingToolbar3D.vue'
 import TempLayerDialog from './components/TempLayerDialog.vue'
@@ -237,6 +246,70 @@ async function handleLocate() {
     locateMsg.value = `定位失败：${err.message || '未知错误'}`
     setTimeout(() => { locateMsg.value = '' }, 3000)
   }
+}
+
+// ==================== 地名地址搜索（天地图 V2.0） ====================
+
+/**
+ * 为搜索请求提供当前视野参数：
+ *  - 2D：取 OL 视图范围（转经纬度）与缩放级别
+ *  - 3D：取相机中心构造范围与近似级别
+ * 天地图普通搜索的 mapBound/level 为必填项，用于结果排序与提示
+ */
+function getSearchViewInfo() {
+  if (mapStore.mapMode === '2d' && map2d) {
+    const view = map2d.getView()
+    const extent = view.calculateExtent(map2d.getSize())
+    const [minLng, minLat] = toLonLat([extent[0], extent[1]])
+    const [maxLng, maxLat] = toLonLat([extent[2], extent[3]])
+    return {
+      mapBound: `${minLng},${minLat},${maxLng},${maxLat}`,
+      level: Math.min(18, Math.max(1, Math.round(view.getZoom() || 12)))
+    }
+  }
+  if (mapStore.mapMode === '3d' && viewer3d) {
+    const c = get3DCenter(viewer3d)
+    const z = getApproximateZoom(viewer3d)
+    return {
+      mapBound: `${c[0] - 1},${c[1] - 1},${c[0] + 1},${c[1] + 1}`,
+      level: Math.min(18, Math.max(1, z))
+    }
+  }
+  return { mapBound: '-180,-90,180,90', level: 12 }
+}
+
+/** 点击搜索结果：2D 飞行动画 / 行政区适配范围，3D 相机飞行 */
+function handleSearchLocate(item) {
+  const zoom = Math.min(18, Math.max(3, item.level || 16))
+
+  if (mapStore.mapMode === '2d' && map2d) {
+    // 行政区结果带 bound（minx,miny,maxx,maxy），优先适配整个范围
+    if (item.bound) {
+      const b = item.bound.split(',').map(Number)
+      if (b.length === 4 && b.every(Number.isFinite)) {
+        const min = fromLonLat([b[0], b[1]])
+        const max = fromLonLat([b[2], b[3]])
+        map2d.getView().fit([min[0], min[1], max[0], max[1]], {
+          duration: 800,
+          padding: [50, 50, 50, 50],
+          maxZoom: Math.max(zoom, 14)
+        })
+        // 行政区中心脉冲闪烁 5 秒
+        createPulseEffect(map2d, fromLonLat([item.lng, item.lat]), { fit: false, duration: 5000 })
+        locateMsg.value = `已定位：${item.name}`
+        setTimeout(() => { locateMsg.value = '' }, 2500)
+        return
+      }
+    }
+    flyToLocation(map2d, [item.lng, item.lat], zoom, 1200)
+    // 落点脉冲闪烁 5 秒（项目已有实现；fit: false 避免打断飞行动画）
+    createPulseEffect(map2d, fromLonLat([item.lng, item.lat]), { fit: false, duration: 5000 })
+  } else if (mapStore.mapMode === '3d' && viewer3d) {
+    flyTo(viewer3d, [item.lng, item.lat], zoom)
+  }
+
+  locateMsg.value = `已定位：${item.name}`
+  setTimeout(() => { locateMsg.value = '' }, 2500)
 }
 
 // ==================== 初始化二维地图 ====================
@@ -483,6 +556,16 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
+}
+
+/* 标题栏中部偏左：地名地址搜索 */
+.header-search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding-left: 230px;
 }
 
 .logo-icon {
@@ -596,6 +679,10 @@ onUnmounted(() => {
   display: flex;
   flex: 1;
   overflow: hidden;
+  /* 创建层叠上下文：使地图区域内 z-index 很高的面板（如左侧图层树 9999）
+     不会盖住标题栏中搜索结果的下拉面板 */
+  position: relative;
+  z-index: 1;
 }
 
 .map-area {
