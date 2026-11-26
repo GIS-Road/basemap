@@ -82,8 +82,9 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import CONFIG from '../config/config.js'
 
+
 /**
- * 地名地址搜索组件
+ * 地名地址搜索组件：天地图    
  *
  * 接口：天地图 WEB服务API「地名搜索V2.0」→ 1.6 普通搜索服务
  *   GET  https://api.tianditu.gov.cn/v2/search?postStr={json}&type=query&tk=密钥
