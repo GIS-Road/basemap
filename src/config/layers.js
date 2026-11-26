@@ -898,7 +898,7 @@ const layers = [
         "group": "anotation",
         "type": "anotation",
         "serviceType": "xyz",
-        "visible": false,
+        "visible": true,
         "zoom": ""
       },
       {
